@@ -10,13 +10,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
-        /* ============================================
-           ТОКЕНЫ (Единый источник дизайна)
-           ============================================ */
         :root {
             --color-primary: #E67E22;
             --color-primary-dark: #D35400;
-            --color-primary-light: #F39C12;
             --color-accent: #2C3E50;
             --color-bg: #FDF6F0;
             --color-white: #FFFFFF;
@@ -25,7 +21,6 @@
             --font-heading: 'Playfair Display', serif;
             --font-body: 'Inter', sans-serif;
             --radius: 16px;
-            --radius-sm: 8px;
             --shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
             --shadow-hover: 0 16px 48px rgba(0, 0, 0, 0.12);
             --transition: 0.3s ease;
@@ -50,7 +45,6 @@
             padding: 0 24px;
         }
 
-        /* Кнопки */
         .btn {
             display: inline-block;
             padding: 14px 32px;
@@ -88,7 +82,6 @@
             transform: translateY(-2px);
         }
 
-        /* Карточка города */
         .city-card {
             background: var(--color-white);
             border-radius: var(--radius);
@@ -107,7 +100,7 @@
             width: 100%;
             height: 200px;
             object-fit: cover;
-            border-radius: var(--radius-sm);
+            border-radius: 8px;
             margin-bottom: 16px;
             background: #eee;
         }
@@ -148,12 +141,10 @@
             color: var(--color-text-light);
         }
 
-        /* Загрузка */
         .loading {
             text-align: center;
-            padding: 40px;
+            padding: 60px 20px;
             color: var(--color-text-light);
-            font-size: 1.2rem;
         }
 
         .loading-spinner {
@@ -172,7 +163,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* ШАПКА */
         header {
             background: var(--color-white);
             padding: 16px 0;
@@ -220,7 +210,6 @@
             color: var(--color-primary);
         }
 
-        /* ГЕРОЙ */
         .hero {
             padding: 80px 0 60px;
             text-align: center;
@@ -252,7 +241,6 @@
             flex-wrap: wrap;
         }
 
-        /* ПОПУЛЯРНЫЕ ГОРОДА */
         .cities {
             padding: 60px 0;
         }
@@ -289,7 +277,6 @@
             margin-bottom: 8px;
         }
 
-        /* КАК ЭТО РАБОТАЕТ */
         .steps {
             padding: 60px 0;
             background: var(--color-white);
@@ -332,7 +319,6 @@
             font-size: 0.95rem;
         }
 
-        /* ФУТЕР */
         footer {
             background: var(--color-accent);
             color: rgba(255, 255, 255, 0.7);
@@ -348,6 +334,12 @@
         footer p {
             margin-top: 8px;
             font-size: 0.9rem;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            padding: 20px;
+            text-align: center;
         }
 
         @media (max-width: 768px) {
@@ -384,9 +376,6 @@
 </head>
 <body>
 
-<!-- ============================================
-ШАПКА
-============================================ -->
 <header>
     <div class="container header-inner">
         <a href="#" class="logo">Nowhere<span>Fast</span></a>
@@ -399,9 +388,6 @@
     </div>
 </header>
 
-<!-- ============================================
-ГЕРОЙ
-============================================ -->
 <section class="hero">
     <div class="container">
         <h1>Спланируй идеальное<br /><span>путешествие</span> за 5 минут</h1>
@@ -413,9 +399,6 @@
     </div>
 </section>
 
-<!-- ============================================
-КАК ЭТО РАБОТАЕТ
-============================================ -->
 <section class="steps">
     <div class="container">
         <h2 class="section-title">Как это работает</h2>
@@ -440,15 +423,11 @@
     </div>
 </section>
 
-<!-- ============================================
-ПОПУЛЯРНЫЕ ГОРОДА (ЗАГРУЖАЮТСЯ ИЗ БАЗЫ)
-============================================ -->
 <section class="cities" id="cities-section">
     <div class="container">
         <h2 class="section-title">Куда отправимся?</h2>
         <p class="section-sub">Выбери направление, и мы соберём для тебя идеальный маршрут</p>
         <div id="cities-container">
-            <!-- Города будут загружены из базы данных -->
             <div class="loading">
                 <div class="loading-spinner"></div>
                 <p>Загружаем города...</p>
@@ -457,9 +436,6 @@
     </div>
 </section>
 
-<!-- ============================================
-ФУТЕР
-============================================ -->
 <footer>
     <div class="container">
         <div class="logo">Nowhere<span>Fast</span></div>
@@ -467,42 +443,30 @@
     </div>
 </footer>
 
-<!-- ============================================
-ПОДКЛЮЧЕНИЕ К SUPABASE И ЗАГРУЗКА ГОРОДОВ
-============================================ -->
 <script>
-    // ============================================
-    // 1. ПОДКЛЮЧЕНИЕ К SUPABASE (твои ключи)
-    // ============================================
+    // Твои ключи
     const SUPABASE_URL = 'https://btfmblmmhagkjzdwjkhg.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_26evHlZgEKupz2fsknDjnA_xO5hQqx0';
 
-    // ============================================
-    // 2. ПОДКЛЮЧАЕМСЯ К SUPABASE
-    // ============================================
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Создаём клиент
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // ============================================
-    // 3. ФУНКЦИЯ ЗАГРУЗКИ ГОРОДОВ
-    // ============================================
+    // Функция загрузки городов
     async function loadCities() {
         const container = document.getElementById('cities-container');
 
         try {
-            // Запрашиваем города из базы
-            const { data: cities, error } = await supabase
+            const { data: cities, error } = await supabaseClient
                 .from('cities')
-                .select('*')
-                .order('name');
+                .select('*');
 
             if (error) {
                 throw error;
             }
 
-            // Если городов нет — показываем сообщение
             if (!cities || cities.length === 0) {
                 container.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1 / -1;">
+                    <div class="empty-state">
                         <h3>😕 Городов пока нет</h3>
                         <p>Добавьте первый город через SQL-редактор Supabase</p>
                     </div>
@@ -510,19 +474,20 @@
                 return;
             }
 
-            // Рисуем карточки городов
-            let html = '';
+            let html = '<div class="cities-grid">';
+            
             cities.forEach(city => {
-                // Определяем теги для города
-                const tags = getTagsForCity(city);
+                const tags = city.name === 'Гуанджоу' 
+                    ? ['🌆 Мегаполис', '🍜 Кухня', '🏛️ История'] 
+                    : ['🌍 Путешествие'];
 
                 html += `
                     <div class="city-card">
                         <img src="${city.image_url || 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&h=400&fit=crop'}" 
-                             alt="${city.name}" 
+                             alt="${city.name}"
                              onerror="this.src='https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&h=400&fit=crop'" />
                         <h3>${city.name}</h3>
-                        <div class="country">${city.country ? '🇨🇳 ' + city.country : ''}</div>
+                        <div class="country">${city.country || '📍 Неизвестно'}</div>
                         <p>${city.description || 'Удивительное место для путешествий'}</p>
                         <div class="tags">
                             ${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
@@ -531,34 +496,22 @@
                 `;
             });
 
-            container.innerHTML = `<div class="cities-grid">${html}</div>`;
+            html += '</div>';
+            container.innerHTML = html;
 
         } catch (err) {
-            console.error('Ошибка загрузки городов:', err);
+            console.error('Ошибка:', err);
             container.innerHTML = `
-                <div class="empty-state" style="grid-column: 1 / -1; color: #e74c3c;">
+                <div class="empty-state" style="color: #e74c3c;">
                     <h3>⚠️ Ошибка загрузки</h3>
                     <p>${err.message}</p>
-                    <p style="font-size: 0.9rem; margin-top: 12px;">Проверь подключение к Supabase и ключи</p>
+                    <p style="font-size: 0.9rem; margin-top: 12px;">Проверь консоль для деталей</p>
                 </div>
             `;
         }
     }
 
-    // ============================================
-    // 4. ТЕГИ ДЛЯ ГОРОДОВ
-    // ============================================
-    function getTagsForCity(city) {
-        const tags = [];
-        if (city.name === 'Гуанджоу') {
-            tags.push('🌆 Мегаполис', '🍜 Кухня', '🏛️ История');
-        }
-        return tags.length > 0 ? tags : ['🌍 Путешествие'];
-    }
-
-    // ============================================
-    // 5. ЗАГРУЖАЕМ ГОРОДА ПРИ ОТКРЫТИИ СТРАНИЦЫ
-    // ============================================
+    // Загружаем города при открытии страницы
     document.addEventListener('DOMContentLoaded', loadCities);
 </script>
 
