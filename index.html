@@ -342,6 +342,12 @@
             text-align: center;
         }
 
+        .city-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
         @media (max-width: 768px) {
             .hero h1 {
                 font-size: 2.5rem;
@@ -381,7 +387,7 @@
         <a href="#" class="logo">Nowhere<span>Fast</span></a>
         <nav>
             <a href="#">Главная</a>
-            <a href="#">Города</a>
+            <a href="#cities-section">Города</a>
             <a href="#">Мои поездки</a>
             <a href="#" class="btn btn-primary" style="padding: 8px 24px; font-size: 0.9rem;">Войти</a>
         </nav>
@@ -481,18 +487,23 @@
                     ? ['🌆 Мегаполис', '🍜 Кухня', '🏛️ История'] 
                     : ['🌍 Путешествие'];
 
+                // Ссылка на страницу города с названием в URL
+                const cityLink = `city.html?city=${encodeURIComponent(city.name)}`;
+
                 html += `
-                    <div class="city-card">
-                        <img src="${city.image_url || 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&h=400&fit=crop'}" 
-                             alt="${city.name}"
-                             onerror="this.src='https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&h=400&fit=crop'" />
-                        <h3>${city.name}</h3>
-                        <div class="country">${city.country || '📍 Неизвестно'}</div>
-                        <p>${city.description || 'Удивительное место для путешествий'}</p>
-                        <div class="tags">
-                            ${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    <a href="${cityLink}" class="city-link">
+                        <div class="city-card">
+                            <img src="${city.image_url || 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&h=400&fit=crop'}" 
+                                 alt="${city.name}"
+                                 onerror="this.src='https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&h=400&fit=crop'" />
+                            <h3>${city.name}</h3>
+                            <div class="country">${city.country || '📍 Неизвестно'}</div>
+                            <p>${city.description || 'Удивительное место для путешествий'}</p>
+                            <div class="tags">
+                                ${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 `;
             });
 
