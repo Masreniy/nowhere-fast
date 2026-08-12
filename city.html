@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nowhere Fast — Город</title>
+    <title>Nowhere Fast — Гуанчжоу</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -423,25 +423,33 @@
 
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Получаем название города из URL (?city=Гуанджоу)
-    const params = new URLSearchParams(window.location.search);
-    const cityName = params.get('city') || 'Гуанджоу';
+    // ЖЁСТКО ЗАДАЁМ НАЗВАНИЕ ГОРОДА (чтобы не зависеть от URL)
+    const CITY_NAME = 'Гуанчжоу';
 
+    // === ЗАГРУЗКА ГОРОДА ===
     async function loadCity() {
         const container = document.getElementById('city-content');
 
         try {
+            console.log('Ищем город:', CITY_NAME);
+
             const { data: city, error } = await supabase
                 .from('cities')
                 .select('*')
-                .eq('name', cityName)
+                .eq('name', CITY_NAME)
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                console.error('Ошибка при поиске города:', error);
+                throw error;
+            }
+
             if (!city) {
-                container.innerHTML = `<div class="empty-state"><h3>😕 Город не найден</h3></div>`;
+                container.innerHTML = `<div class="empty-state"><h3>😕 Город "${CITY_NAME}" не найден в базе</h3></div>`;
                 return;
             }
+
+            console.log('Город найден:', city);
 
             container.innerHTML = `
                 <h1>${city.name}</h1>
@@ -468,32 +476,33 @@
                 </div>
             `;
 
+            // После загрузки города — загружаем маршруты
+            loadRoutes(city.id);
+
         } catch (err) {
-            console.error('Ошибка:', err);
-            container.innerHTML = `<div class="error-message">⚠️ Ошибка загрузки города: ${err.message}</div>`;
+            console.error('Ошибка загрузки города:', err);
+            container.innerHTML = `<div class="error-message">⚠️ Ошибка: ${err.message}</div>`;
         }
     }
 
-    async function loadRoutes() {
+    // === ЗАГРУЗКА МАРШРУТОВ ===
+    async function loadRoutes(cityId) {
         const container = document.getElementById('routes-container');
 
         try {
-            // Сначала получаем ID города
-            const { data: city, error: cityError } = await supabase
-                .from('cities')
-                .select('id')
-                .eq('name', cityName)
-                .single();
+            console.log('Загружаем маршруты для cityId:', cityId);
 
-            if (cityError) throw cityError;
-
-            // Получаем маршруты для этого города
-            const { data: routes, error: routesError } = await supabase
+            const { data: routes, error } = await supabase
                 .from('route_templates')
                 .select('*')
-                .eq('city_id', city.id);
+                .eq('city_id', cityId);
 
-            if (routesError) throw routesError;
+            if (error) {
+                console.error('Ошибка при загрузке маршрутов:', error);
+                throw error;
+            }
+
+            console.log('Найдено маршрутов:', routes ? routes.length : 0);
 
             if (!routes || routes.length === 0) {
                 container.innerHTML = `
@@ -508,18 +517,21 @@
             let html = '';
 
             for (const route of routes) {
-                // Получаем дни для маршрута
+                console.log('Загружаем дни для маршрута:', route.name);
+
                 const { data: days, error: daysError } = await supabase
                     .from('route_template_days')
                     .select('*')
                     .eq('route_template_id', route.id)
                     .order('day_number');
 
-                if (daysError) continue;
+                if (daysError) {
+                    console.error('Ошибка загрузки дней:', daysError);
+                    continue;
+                }
 
                 let daysHtml = '<div class="route-days">';
                 for (const day of days) {
-                    // Получаем активности для дня
                     const { data: activities, error: actError } = await supabase
                         .from('route_template_activities')
                         .select('*')
@@ -563,7 +575,7 @@
                         <div class="route-header">
                             <h3>${route.name}</h3>
                             <div>
-                                <span class="badge ${route.difficulty || 'medium'}">${difficultyMap[route.difficulty] || 'Средний'} · ${route.days_count} дня</span>
+                                <span class="badge ${route.difficulty || 'medium'}">${difficultyMap[route.difficulty] || 'Средний'} · ${route.days_count} дн.</span>
                             </div>
                         </div>
                         ${route.description ? `<p>${route.description}</p>` : ''}
@@ -575,7 +587,7 @@
             container.innerHTML = html;
 
         } catch (err) {
-            console.error('Ошибка:', err);
+            console.error('Ошибка загрузки маршрутов:', err);
             container.innerHTML = `
                 <div class="empty-state" style="color: #e74c3c;">
                     <h3>⚠️ Ошибка загрузки маршрутов</h3>
@@ -585,10 +597,8 @@
         }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        loadCity();
-        loadRoutes();
-    });
+    // Запускаем загрузку
+    document.addEventListener('DOMContentLoaded', loadCity);
 </script>
 
 </body>
