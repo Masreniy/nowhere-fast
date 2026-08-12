@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Nowhere Fast — Планировщик путешествий</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
-    
-    <!-- Подключаем библиотеку Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <style>
         :root {
             --color-primary: #E67E22;
@@ -26,11 +23,7 @@
             --transition: 0.3s ease;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: var(--font-body);
@@ -89,6 +82,9 @@
             box-shadow: var(--shadow);
             transition: var(--transition);
             overflow: hidden;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
         }
 
         .city-card:hover {
@@ -121,6 +117,7 @@
             color: var(--color-text-light);
             font-size: 0.95rem;
             margin-bottom: 16px;
+            flex: 1;
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
@@ -131,6 +128,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
+            margin-top: auto;
         }
 
         .city-card .tag {
@@ -188,9 +186,7 @@
             text-decoration: none;
         }
 
-        .logo span {
-            color: var(--color-primary);
-        }
+        .logo span { color: var(--color-primary); }
 
         nav {
             display: flex;
@@ -206,9 +202,7 @@
             transition: var(--transition);
         }
 
-        nav a:hover {
-            color: var(--color-primary);
-        }
+        nav a:hover { color: var(--color-primary); }
 
         .hero {
             padding: 80px 0 60px;
@@ -223,9 +217,7 @@
             margin-bottom: 20px;
         }
 
-        .hero h1 span {
-            color: var(--color-primary);
-        }
+        .hero h1 span { color: var(--color-primary); }
 
         .hero p {
             font-size: 1.2rem;
@@ -269,6 +261,7 @@
             text-align: center;
             padding: 60px 20px;
             color: var(--color-text-light);
+            grid-column: 1 / -1;
         }
 
         .empty-state h3 {
@@ -331,16 +324,7 @@
             font-size: 1.5rem;
         }
 
-        footer p {
-            margin-top: 8px;
-            font-size: 0.9rem;
-        }
-
-        .error-message {
-            color: #e74c3c;
-            padding: 20px;
-            text-align: center;
-        }
+        footer p { margin-top: 8px; font-size: 0.9rem; }
 
         .city-link {
             text-decoration: none;
@@ -348,35 +332,29 @@
             display: block;
         }
 
+        /* Админ-ссылка */
+        .admin-link {
+            color: var(--color-text-light);
+            font-size: 0.8rem;
+            text-decoration: none;
+            opacity: 0.5;
+            transition: var(--transition);
+        }
+        .admin-link:hover {
+            opacity: 1;
+            color: var(--color-primary);
+        }
+
         @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-
-            .header-inner {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 12px;
-            }
-
-            nav {
-                justify-content: center;
-            }
-
-            .cities-grid {
-                grid-template-columns: 1fr;
-            }
+            .hero h1 { font-size: 2.5rem; }
+            .header-inner { flex-direction: column; align-items: stretch; gap: 12px; }
+            nav { justify-content: center; }
+            .cities-grid { grid-template-columns: 1fr; }
         }
 
         @media (max-width: 480px) {
-            .hero h1 {
-                font-size: 2rem;
-            }
-
-            .hero-buttons .btn {
-                width: 100%;
-                text-align: center;
-            }
+            .hero h1 { font-size: 2rem; }
+            .hero-buttons .btn { width: 100%; text-align: center; }
         }
     </style>
 </head>
@@ -390,6 +368,7 @@
             <a href="#cities-section">Города</a>
             <a href="#">Мои поездки</a>
             <a href="#" class="btn btn-primary" style="padding: 8px 24px; font-size: 0.9rem;">Войти</a>
+            <a href="admin.html" class="admin-link">⚙️ Админка</a>
         </nav>
     </div>
 </header>
@@ -450,50 +429,43 @@
 </footer>
 
 <script>
-    // Твои ключи
     const SUPABASE_URL = 'https://btfmblmmhagkjzdwjkhg.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_26evHlZgEKupz2fsknDjnA_xO5hQqx0';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Создаём клиент
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    // Функция загрузки городов
     async function loadCities() {
         const container = document.getElementById('cities-container');
 
         try {
-            const { data: cities, error } = await supabaseClient
+            const { data: cities, error } = await supabase
                 .from('cities')
-                .select('*');
+                .select('*')
+                .order('name');
 
-            if (error) {
-                throw error;
-            }
+            if (error) throw error;
 
             if (!cities || cities.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <h3>😕 Городов пока нет</h3>
-                        <p>Добавьте первый город через SQL-редактор Supabase</p>
+                        <p>Добавь первый город через <a href="admin.html" style="color: var(--color-primary);">админку</a></p>
                     </div>
                 `;
                 return;
             }
 
             let html = '<div class="cities-grid">';
-            
-            cities.forEach(city => {
-                const tags = city.name === 'Гуанджоу' 
-                    ? ['🌆 Мегаполис', '🍜 Кухня', '🏛️ История'] 
-                    : ['🌍 Путешествие'];
 
-                // Ссылка на страницу города с названием в URL
-                const cityLink = `city.html?city=${encodeURIComponent(city.name)}`;
+            cities.forEach(city => {
+                const tags = ['🌍 Путешествие'];
+                if (city.name === 'Гуанчжоу' || city.name.includes('Гуан')) {
+                    tags.push('🌆 Мегаполис', '🍜 Кухня');
+                }
 
                 html += `
-                    <a href="${cityLink}" class="city-link">
+                    <a href="city.html?city=${encodeURIComponent(city.name)}" class="city-link">
                         <div class="city-card">
-                            <img src="${city.image_url || 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&h=400&fit=crop'}" 
+                            <img src="${city.image_url || 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&h=400&fit=crop'}"
                                  alt="${city.name}"
                                  onerror="this.src='https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&h=400&fit=crop'" />
                             <h3>${city.name}</h3>
@@ -516,13 +488,11 @@
                 <div class="empty-state" style="color: #e74c3c;">
                     <h3>⚠️ Ошибка загрузки</h3>
                     <p>${err.message}</p>
-                    <p style="font-size: 0.9rem; margin-top: 12px;">Проверь консоль для деталей</p>
                 </div>
             `;
         }
     }
 
-    // Загружаем города при открытии страницы
     document.addEventListener('DOMContentLoaded', loadCities);
 </script>
 
