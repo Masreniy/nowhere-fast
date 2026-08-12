@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nowhere Fast — Город</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --color-primary: #E67E22;
+            --color-primary-dark: #D35400;
+            --color-accent: #2C3E50;
+            --color-bg: #FDF6F0;
+            --color-white: #FFFFFF;
+            --color-text: #1A1A2E;
+            --color-text-light: #5D5D7A;
+            --font-heading: 'Playfair Display', serif;
+            --font-body: 'Inter', sans-serif;
+            --radius: 16px;
+            --shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            --transition: 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 28px;
+            border: none;
+            border-radius: 60px;
+            font-family: var(--font-body);
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: var(--color-white);
+            box-shadow: 0 4px 16px rgba(230, 126, 34, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: var(--color-primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--color-white);
+            color: var(--color-text);
+            border: 2px solid #E0E0E0;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+            transform: translateY(-2px);
+        }
+
+        .btn-back {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: var(--color-text-light);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .btn-back:hover {
+            color: var(--color-primary);
+        }
+
+        header {
+            background: var(--color-white);
+            padding: 16px 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.04);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .logo {
+            font-family: var(--font-heading);
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--color-text);
+            text-decoration: none;
+        }
+
+        .logo span { color: var(--color-primary); }
+
+        nav {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--color-text);
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        nav a:hover { color: var(--color-primary); }
+
+        .city-hero {
+            padding: 40px 0 20px;
+        }
+
+        .city-hero h1 {
+            font-family: var(--font-heading);
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .city-hero .country {
+            font-size: 1.2rem;
+            color: var(--color-text-light);
+            margin-bottom: 16px;
+        }
+
+        .city-hero .description {
+            font-size: 1.1rem;
+            color: var(--color-text-light);
+            max-width: 700px;
+            margin-bottom: 24px;
+        }
+
+        .city-hero img {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: var(--radius);
+            margin-bottom: 24px;
+        }
+
+        .city-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            background: var(--color-white);
+            padding: 20px 24px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 32px;
+        }
+
+        .city-meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .city-meta-item .label {
+            font-size: 0.8rem;
+            color: var(--color-text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .city-meta-item .value {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .routes-section {
+            padding: 20px 0 60px;
+        }
+
+        .routes-section h2 {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .routes-section .sub {
+            color: var(--color-text-light);
+            margin-bottom: 32px;
+        }
+
+        .route-card {
+            background: var(--color-white);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        .route-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .route-card .route-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .route-card h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .route-card .badge {
+            background: var(--color-bg);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--color-text-light);
+            font-weight: 500;
+        }
+
+        .route-card .badge.hard { background: #fde8e8; color: #c0392b; }
+        .route-card .badge.medium { background: #fef9e7; color: #b7950b; }
+        .route-card .badge.easy { background: #eafaf1; color: #1e8449; }
+
+        .route-card p {
+            color: var(--color-text-light);
+            margin-top: 8px;
+        }
+
+        .route-days {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #eee;
+        }
+
+        .route-day {
+            margin-bottom: 16px;
+        }
+
+        .route-day .day-title {
+            font-weight: 600;
+            color: var(--color-text);
+            margin-bottom: 4px;
+        }
+
+        .route-day .day-desc {
+            color: var(--color-text-light);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 8px 12px;
+            background: var(--color-bg);
+            border-radius: 8px;
+            margin-bottom: 6px;
+        }
+
+        .activity-item .order {
+            font-weight: 700;
+            color: var(--color-primary);
+            font-size: 0.9rem;
+            min-width: 24px;
+        }
+
+        .activity-item .info {
+            flex: 1;
+        }
+
+        .activity-item .info .name {
+            font-weight: 500;
+        }
+
+        .activity-item .info .desc {
+            font-size: 0.85rem;
+            color: var(--color-text-light);
+        }
+
+        .activity-item .info .location {
+            font-size: 0.8rem;
+            color: var(--color-text-light);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--color-text-light);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--color-bg);
+            border-top: 4px solid var(--color-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--color-text-light);
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            color: var(--color-text);
+            margin-bottom: 8px;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            padding: 20px;
+            text-align: center;
+        }
+
+        footer {
+            background: var(--color-accent);
+            color: rgba(255, 255, 255, 0.7);
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        footer .logo {
+            color: var(--color-white);
+            font-size: 1.5rem;
+        }
+
+        footer p { margin-top: 8px; font-size: 0.9rem; }
+
+        @media (max-width: 768px) {
+            .city-hero h1 { font-size: 2.2rem; }
+            .header-inner { flex-direction: column; align-items: stretch; gap: 12px; }
+            nav { justify-content: center; }
+            .city-meta { flex-direction: column; gap: 12px; }
+            .route-card .route-header { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="container header-inner">
+        <a href="index.html" class="logo">Nowhere<span>Fast</span></a>
+        <nav>
+            <a href="index.html">Главная</a>
+            <a href="index.html#cities-section">Города</a>
+            <a href="#">Мои поездки</a>
+            <a href="#" class="btn btn-primary" style="padding: 8px 24px; font-size: 0.9rem;">Войти</a>
+        </nav>
+    </div>
+</header>
+
+<main>
+    <div class="container city-hero" id="city-hero">
+        <a href="index.html" class="btn-back">← Назад к городам</a>
+        <div id="city-content">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>Загружаем город...</p>
+            </div>
+        </div>
+    </div>
+
+    <section class="routes-section">
+        <div class="container">
+            <h2>Маршруты</h2>
+            <p class="sub">Выбери готовый маршрут и начни планировать</p>
+            <div id="routes-container">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Загружаем маршруты...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <div class="container">
+        <div class="logo">Nowhere<span>Fast</span></div>
+        <p>&copy; 2026 Все права защищены. Сделано для путешественников.</p>
+    </div>
+</footer>
+
+<script>
+    // Ключи Supabase
+    const SUPABASE_URL = 'https://btfmblmmhagkjzdwjkhg.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_26evHlZgEKupz2fsknDjnA_xO5hQqx0';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Получаем название города из URL (?city=Гуанджоу)
+    const params = new URLSearchParams(window.location.search);
+    const cityName = params.get('city') || 'Гуанджоу';
+
+    async function loadCity() {
+        const container = document.getElementById('city-content');
+
+        try {
+            const { data: city, error } = await supabase
+                .from('cities')
+                .select('*')
+                .eq('name', cityName)
+                .single();
+
+            if (error) throw error;
+            if (!city) {
+                container.innerHTML = `<div class="empty-state"><h3>😕 Город не найден</h3></div>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <h1>${city.name}</h1>
+                <div class="country">${city.country || '📍 Неизвестно'}</div>
+                <img src="${city.image_url || 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&h=400&fit=crop'}" alt="${city.name}" onerror="this.src='https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&h=400&fit=crop'" />
+                <p class="description">${city.description || 'Удивительное место для путешествий'}</p>
+                <div class="city-meta">
+                    <div class="city-meta-item">
+                        <span class="label">Валюта</span>
+                        <span class="value">${city.currency || '—'}</span>
+                    </div>
+                    <div class="city-meta-item">
+                        <span class="label">Язык</span>
+                        <span class="value">${city.language || '—'}</span>
+                    </div>
+                    <div class="city-meta-item">
+                        <span class="label">Часовой пояс</span>
+                        <span class="value">${city.timezone || '—'}</span>
+                    </div>
+                    <div class="city-meta-item">
+                        <span class="label">Виза</span>
+                        <span class="value">${city.visa_info || '—'}</span>
+                    </div>
+                </div>
+            `;
+
+        } catch (err) {
+            console.error('Ошибка:', err);
+            container.innerHTML = `<div class="error-message">⚠️ Ошибка загрузки города: ${err.message}</div>`;
+        }
+    }
+
+    async function loadRoutes() {
+        const container = document.getElementById('routes-container');
+
+        try {
+            // Сначала получаем ID города
+            const { data: city, error: cityError } = await supabase
+                .from('cities')
+                .select('id')
+                .eq('name', cityName)
+                .single();
+
+            if (cityError) throw cityError;
+
+            // Получаем маршруты для этого города
+            const { data: routes, error: routesError } = await supabase
+                .from('route_templates')
+                .select('*')
+                .eq('city_id', city.id);
+
+            if (routesError) throw routesError;
+
+            if (!routes || routes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>😕 Маршрутов пока нет</h3>
+                        <p>Добавьте маршруты через SQL-редактор Supabase</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+
+            for (const route of routes) {
+                // Получаем дни для маршрута
+                const { data: days, error: daysError } = await supabase
+                    .from('route_template_days')
+                    .select('*')
+                    .eq('route_template_id', route.id)
+                    .order('day_number');
+
+                if (daysError) continue;
+
+                let daysHtml = '<div class="route-days">';
+                for (const day of days) {
+                    // Получаем активности для дня
+                    const { data: activities, error: actError } = await supabase
+                        .from('route_template_activities')
+                        .select('*')
+                        .eq('route_template_day_id', day.id)
+                        .order('order_in_day');
+
+                    if (actError) continue;
+
+                    let activitiesHtml = '';
+                    for (const act of activities) {
+                        activitiesHtml += `
+                            <div class="activity-item">
+                                <span class="order">${act.order_in_day}.</span>
+                                <div class="info">
+                                    <div class="name">${act.name}</div>
+                                    ${act.description ? `<div class="desc">${act.description}</div>` : ''}
+                                    ${act.location ? `<div class="location">📍 ${act.location}</div>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    daysHtml += `
+                        <div class="route-day">
+                            <div class="day-title">День ${day.day_number}: ${day.name || ''}</div>
+                            ${day.description ? `<div class="day-desc">${day.description}</div>` : ''}
+                            ${activitiesHtml}
+                        </div>
+                    `;
+                }
+                daysHtml += '</div>';
+
+                const difficultyMap = {
+                    easy: '🟢 Лёгкий',
+                    medium: '🟡 Средний',
+                    hard: '🔴 Сложный'
+                };
+
+                html += `
+                    <div class="route-card">
+                        <div class="route-header">
+                            <h3>${route.name}</h3>
+                            <div>
+                                <span class="badge ${route.difficulty || 'medium'}">${difficultyMap[route.difficulty] || 'Средний'} · ${route.days_count} дня</span>
+                            </div>
+                        </div>
+                        ${route.description ? `<p>${route.description}</p>` : ''}
+                        ${daysHtml}
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+
+        } catch (err) {
+            console.error('Ошибка:', err);
+            container.innerHTML = `
+                <div class="empty-state" style="color: #e74c3c;">
+                    <h3>⚠️ Ошибка загрузки маршрутов</h3>
+                    <p>${err.message}</p>
+                </div>
+            `;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCity();
+        loadRoutes();
+    });
+</script>
+
+</body>
+</html>
