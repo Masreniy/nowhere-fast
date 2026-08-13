@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nowhere Fast — планировщик путешествий</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+<header class="site-header"><div class="container header-inner"><a class="logo" href="index.html">Nowhere<span>Fast</span></a><nav class="nav"><a href="index.html">Главная</a><a href="#cities">Города</a><a href="admin.html">Админка</a></nav></div></header>
+<main>
+<section class="hero"><div class="container hero-grid"><div><div class="eyebrow">NOWHERE FAST</div><h1>Путешествуй <span>умнее</span>, а не сложнее.</h1><p>Города, проверенные маршруты и практичная подготовка к поездке — в одном месте.</p><div class="hero-actions"><a class="btn btn-primary" href="#cities">Выбрать город</a><a class="btn btn-secondary" href="admin.html">Управлять контентом</a></div></div><div class="card" style="padding:12px"><img style="width:100%;height:420px;object-fit:cover;border-radius:16px" src="https://images.unsplash.com/photo-1500534623283-312aade485b7?w=1200&auto=format&fit=crop" alt="Путешествие" loading="eager"></div></div></section>
+<section class="section" id="cities"><div class="container"><div class="section-head"><div><div class="eyebrow">НАПРАВЛЕНИЯ</div><h2>Куда поедем?</h2><p class="muted">Выбирай город и смотри готовую структуру поездки.</p></div></div><div id="cities-grid" class="city-grid"><div class="empty-state">Загружаем города…</div></div></div></section>
+</main>
+<footer class="site-footer"><div class="container footer-inner"><div><div class="logo">Nowhere<span>Fast</span></div><div>Планируй меньше. Путешествуй больше.</div></div><div>© 2026 Nowhere Fast</div></div></footer>
+<script type="module">
+import { supabaseClient } from './assets/js/app.js';
+const grid=document.querySelector('#cities-grid');
+const esc=(v='')=>String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+async function load(){
+ try{
+  const {data,error}=await supabaseClient.from('cities').select('id,name,country,description,image_url').order('name');
+  if(error) throw error;
+  if(!data?.length){grid.innerHTML='<div class="empty-state"><h3>Городов пока нет</h3><p>Контент можно добавить через админ-панель.</p></div>';return;}
+  grid.innerHTML=data.map(c=>`<a class="city-card" href="city.html?id=${encodeURIComponent(c.id)}"><img src="${esc(c.image_url||'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&auto=format&fit=crop')}" alt="${esc(c.name)}" loading="lazy"><div class="city-card__body"><div class="eyebrow">${esc(c.country||'Направление')}</div><h3>${esc(c.name)}</h3><p>${esc(c.description||'Открой город и готовые маршруты.')}</p><span class="city-card__link">Смотреть город →</span></div></a>`).join('');
+ }catch(e){grid.innerHTML=`<div class="error">Не удалось загрузить города: ${esc(e.message)}</div>`}
+}
+load();
+</script>
+</body></html>
