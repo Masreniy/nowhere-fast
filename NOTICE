@@ -1,0 +1,57 @@
+Nowhere Fast включает материалы сторонних проектов.
+Ниже перечислены их лицензии и объём заимствования.
+
+================================================================================
+ECC — Everything Claude Code
+================================================================================
+
+Источник:  https://github.com/affaan-m/ECC
+Версия:    2.2.1
+Коммит:    8321021c54d670126ce3b2969d5deb880b4b0c2a
+Лицензия:  MIT
+
+Заимствованные файлы (дословные копии):
+
+  .claude/agents/planner.md
+  .claude/agents/architect.md
+  .claude/agents/code-reviewer.md
+  .claude/agents/security-reviewer.md
+  .claude/skills/product-lens/SKILL.md
+  .claude/skills/intent-driven-development/SKILL.md
+  .claude/skills/architecture-decision-records/SKILL.md
+
+Файлы, созданные на основе ECC с изменениями (производные работы):
+
+  .claude/rules/agents.md                 ← rules/common/agents.md
+  .claude/rules/code-review.md            ← rules/common/code-review.md
+  .claude/rules/coding-style.md           ← rules/common/coding-style.md
+  .claude/rules/development-workflow.md   ← rules/common/development-workflow.md
+  .claude/rules/git-workflow.md           ← rules/common/git-workflow.md
+  .claude/rules/security.md               ← rules/common/security.md
+  .claude/rules/testing.md                ← rules/common/testing.md
+
+Характер изменений описан в docs/INTEGRATION-ECC.md.
+
+--------------------------------------------------------------------------------
+
+MIT License
+
+Copyright (c) 2026 Affaan Mustafa
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
