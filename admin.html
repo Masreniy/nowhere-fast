@@ -4,211 +4,434 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Админка — Nowhere Fast</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; padding: 24px; color: #1a1a2e; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        h1 { font-size: 2rem; margin-bottom: 8px; }
-        .sub { color: #666; margin-bottom: 32px; }
-        .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
-        .card h2 { font-size: 1.3rem; margin-bottom: 16px; }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; color: #333; }
-        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; font-family: inherit; }
-        .form-group textarea { min-height: 80px; resize: vertical; }
-        .btn { padding: 10px 24px; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .btn-primary { background: #E67E22; color: white; }
-        .btn-primary:hover { background: #D35400; }
-        .btn-danger { background: #e74c3c; color: white; }
-        .btn-danger:hover { background: #c0392b; }
-        .table { width: 100%; border-collapse: collapse; }
-        .table th { text-align: left; padding: 12px 12px 12px 0; border-bottom: 2px solid #eee; font-weight: 600; }
-        .table td { padding: 12px 12px 12px 0; border-bottom: 1px solid #f0f0f0; }
-        .table .actions { display: flex; gap: 8px; }
-        .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
-        .tabs button { padding: 10px 20px; border: none; border-radius: 8px; background: #eee; cursor: pointer; font-weight: 600; transition: 0.2s; }
-        .tabs button.active { background: #E67E22; color: white; }
-        .loading { text-align: center; padding: 40px; color: #999; }
-        .hidden { display: none; }
-        @media (max-width: 768px) { .table { font-size: 0.9rem; } .table th, .table td { padding: 8px 8px 8px 0; } }
-    </style>
+    <meta name="robots" content="noindex, nofollow" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="assets/css/app.css" />
+    <link rel="stylesheet" href="assets/css/admin.css" />
 </head>
 <body>
 <div class="container">
-    <h1>🔧 Админка Nowhere Fast</h1>
-    <p class="sub">Управляй городами и маршрутами — без кода</p>
-    <div class="tabs">
-        <button class="active" onclick="switchTab('cities')">🏙️ Города</button>
-        <button onclick="switchTab('routes')">🗺️ Маршруты</button>
+    <h1 class="admin-title">🔧 Админка Nowhere Fast</h1>
+    <p class="admin-sub">Города, места и маршруты</p>
+
+    <!--
+        Предупреждение показывается намеренно и не убирается «чтобы не мешало».
+        Пока политики из supabase/policies.sql не применены, любой посетитель
+        сайта может добавить или удалить данные из консоли браузера — скрытая
+        ссылка на эту страницу защитой не является.
+    -->
+    <div class="notice">
+        <strong>Записи не защищены</strong>
+        Аутентификации нет. Пока не применён <code>supabase/policies.sql</code>,
+        добавить или удалить данные может любой, кто откроет консоль браузера.
+        Скрытая ссылка на админку — не защита.
     </div>
-    <div id="tab-cities">
-        <div class="card">
-            <h2>➕ Добавить город</h2>
-            <form id="city-form" onsubmit="addCity(event)">
-                <div class="form-group"><label>Название города *</label><input id="city-name" placeholder="Гуанчжоу" required /></div>
-                <div class="form-group"><label>Страна *</label><input id="city-country" placeholder="Китай" required /></div>
-                <div class="form-group"><label>Описание</label><textarea id="city-desc" placeholder="Краткое описание города..."></textarea></div>
-                <div class="form-group"><label>Ссылка на фото (URL)</label><input id="city-image" placeholder="https://...jpg" /></div>
-                <button type="submit" class="btn btn-primary">➕ Добавить город</button>
-            </form>
-        </div>
-        <div class="card">
-            <h2>📋 Список городов</h2>
-            <div id="cities-list"><div class="loading">Загрузка...</div></div>
-        </div>
+
+    <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="places">📍 Места</button>
+        <button role="tab" aria-selected="false" data-tab="cities">🏙️ Города</button>
+        <button role="tab" aria-selected="false" data-tab="routes">🗺️ Маршруты</button>
     </div>
-    <div id="tab-routes" class="hidden">
+
+    <!-- ---------------------------------------------------------------- -->
+    <!-- Места — основная сущность планировщика (ADR-0004)                 -->
+    <!-- ---------------------------------------------------------------- -->
+    <section id="tab-places">
         <div class="card">
-            <h2>➕ Добавить маршрут</h2>
-            <form id="route-form" onsubmit="addRoute(event)">
-                <div class="form-group"><label>Город *</label><select id="route-city" required></select></div>
-                <div class="form-group"><label>Название маршрута *</label><input id="route-name" placeholder="Гуанчжоу за 3 дня" required /></div>
-                <div class="form-group"><label>Описание</label><textarea id="route-desc" placeholder="Что вас ждёт..."></textarea></div>
-                <div class="form-group" style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                    <div><label>Количество дней *</label><input id="route-days" type="number" placeholder="3" required /></div>
-                    <div><label>Сложность</label><select id="route-difficulty"><option value="easy">🟢 Лёгкий</option><option value="medium" selected>🟡 Средний</option><option value="hard">🔴 Сложный</option></select></div>
+            <h2>➕ Добавить место</h2>
+            <form id="place-form" novalidate>
+                <div class="form-group">
+                    <label for="place-city">Город *</label>
+                    <select id="place-city" required></select>
                 </div>
-                <button type="submit" class="btn btn-primary">➕ Добавить маршрут</button>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="place-name">Название *</label>
+                        <span class="hint">На языке интерфейса</span>
+                        <input id="place-name" required placeholder="Парк Юэсю" />
+                    </div>
+                    <div class="form-group">
+                        <label for="place-name-local">Местное написание</label>
+                        <span class="hint">То, что понимает навигатор</span>
+                        <input id="place-name-local" placeholder="越秀公园" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="place-lat">Широта *</label>
+                        <span class="hint">От −90 до 90</span>
+                        <input id="place-lat" type="number" step="any" min="-90" max="90" required placeholder="23.1400" />
+                    </div>
+                    <div class="form-group">
+                        <label for="place-lng">Долгота *</label>
+                        <span class="hint">От −180 до 180</span>
+                        <input id="place-lng" type="number" step="any" min="-180" max="180" required placeholder="113.2644" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="place-address-local">Местный адрес</label>
+                    <span class="hint">Адрес на языке страны — его показывают таксисту</span>
+                    <input id="place-address-local" placeholder="广州市越秀区解放北路988号" />
+                </div>
+
+                <div class="form-group">
+                    <label for="place-desc">Описание</label>
+                    <textarea id="place-desc" placeholder="Чем это место стоит времени..."></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="place-category">Категория</label>
+                        <select id="place-category">
+                            <option value="">— не указана —</option>
+                            <option value="еда">🍜 Еда</option>
+                            <option value="парк">🌳 Парк</option>
+                            <option value="музей">🏛️ Музей</option>
+                            <option value="смотровая">🌆 Смотровая</option>
+                            <option value="рынок">🛍️ Рынок</option>
+                            <option value="храм">⛩️ Храм</option>
+                            <option value="другое">📌 Другое</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="place-minutes">Сколько занимает, мин</label>
+                        <input id="place-minutes" type="number" min="1" placeholder="90" />
+                    </div>
+                    <div class="form-group">
+                        <label for="place-price">Уровень цены</label>
+                        <select id="place-price">
+                            <option value="">— не указан —</option>
+                            <option value="0">Бесплатно</option>
+                            <option value="1">₽</option>
+                            <option value="2">₽₽</option>
+                            <option value="3">₽₽₽</option>
+                            <option value="4">₽₽₽₽</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="admin-btn admin-btn-primary">➕ Добавить место</button>
+                <div id="place-form-message" role="status" aria-live="polite"></div>
             </form>
         </div>
+
         <div class="card">
-            <h2>📋 Список маршрутов</h2>
-            <div id="routes-list"><div class="loading">Загрузка...</div></div>
+            <h2>📋 Места</h2>
+            <div class="form-group" style="max-width:320px">
+                <label for="places-filter-city">Показать город</label>
+                <select id="places-filter-city"></select>
+            </div>
+            <div id="places-list"></div>
         </div>
-    </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section id="tab-cities" class="hidden">
+        <div class="card">
+            <h2>📋 Города</h2>
+            <p class="admin-sub">
+                Справочник городов — внутренние данные проекта. По брифу он правится
+                администратором, поэтому форма добавления здесь появится вместе
+                со входом. Сейчас города заводятся через интерфейс Supabase.
+            </p>
+            <div id="cities-list"></div>
+        </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section id="tab-routes" class="hidden">
+        <div class="card">
+            <h2>📋 Маршруты</h2>
+            <div id="routes-list"></div>
+        </div>
+    </section>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/dom.js"></script>
+<script src="assets/js/api.js"></script>
 <script>
-    const SUPABASE_URL = 'https://btfmblmmhagkjzdwjkhg.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_26evHlZgEKupz2fsknDjnA_xO5hQqx0';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    (function () {
+        'use strict';
 
-    function switchTab(tab) {
-        document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
-        document.querySelector(`.tabs button[onclick*="${tab}"]`).classList.add('active');
-        document.getElementById('tab-cities').classList.toggle('hidden', tab !== 'cities');
-        document.getElementById('tab-routes').classList.toggle('hidden', tab !== 'routes');
-        if (tab === 'routes') { loadCitiesSelect(); loadRoutes(); }
-    }
+        const dom = NF.dom;
+        let cities = [];
 
-    async function loadCities() {
-        const container = document.getElementById('cities-list');
-        try {
-            const { data, error } = await supabase.from('cities').select('*').order('name');
-            if (error) throw error;
-            if (!data || data.length === 0) { container.innerHTML = '<p style="color:#999;">Городов пока нет.</p>'; return; }
-            let html = `<table class="table"><thead><tr><th>Название</th><th>Страна</th><th>Действия</th></tr></thead><tbody>`;
-            data.forEach(c => {
-                html += `<tr><td><strong>${c.name}</strong></td><td>${c.country || '—'}</td><td class="actions"><button class="btn btn-danger" onclick="deleteCity('${c.id}')">🗑️</button></td></tr>`;
+        // --- Вкладки -------------------------------------------------------
+
+        function switchTab(name) {
+            document.querySelectorAll('.tabs button').forEach(function (button) {
+                button.setAttribute('aria-selected', String(button.dataset.tab === name));
             });
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        } catch (err) {
-            container.innerHTML = `<p style="color:#e74c3c;">Ошибка: ${err.message}</p>`;
-        }
-    }
-
-    async function addCity(e) {
-        e.preventDefault();
-        const name = document.getElementById('city-name').value.trim();
-        if (!name) return alert('Введите название города');
-        const data = {
-            name,
-            country: document.getElementById('city-country').value.trim(),
-            description: document.getElementById('city-desc').value.trim(),
-            image_url: document.getElementById('city-image').value.trim() || null
-        };
-        try {
-            const { error } = await supabase.from('cities').insert(data);
-            if (error) throw error;
-            alert('✅ Город добавлен!');
-            document.getElementById('city-form').reset();
-            loadCities();
-            loadCitiesSelect();
-        } catch (err) {
-            alert('❌ Ошибка: ' + err.message);
-        }
-    }
-
-    async function deleteCity(id) {
-        if (!confirm('Удалить город?')) return;
-        try {
-            const { error } = await supabase.from('cities').delete().eq('id', id);
-            if (error) throw error;
-            loadCities();
-            loadCitiesSelect();
-        } catch (err) {
-            alert('Ошибка: ' + err.message);
-        }
-    }
-
-    async function loadCitiesSelect() {
-        const select = document.getElementById('route-city');
-        try {
-            const { data, error } = await supabase.from('cities').select('id, name').order('name');
-            if (error) throw error;
-            select.innerHTML = '<option value="">— Выберите город —</option>';
-            data.forEach(c => { select.innerHTML += `<option value="${c.id}">${c.name}</option>`; });
-        } catch (err) { console.error('Ошибка загрузки городов:', err); }
-    }
-
-    async function loadRoutes() {
-        const container = document.getElementById('routes-list');
-        try {
-            const { data, error } = await supabase.from('route_templates').select('*, cities(name)').order('name');
-            if (error) throw error;
-            if (!data || data.length === 0) { container.innerHTML = '<p style="color:#999;">Маршрутов пока нет.</p>'; return; }
-            let html = `<table class="table"><thead><tr><th>Название</th><th>Город</th><th>Дней</th><th>Действия</th></tr></thead><tbody>`;
-            data.forEach(r => {
-                html += `<tr><td><strong>${r.name}</strong></td><td>${r.cities?.name || '—'}</td><td>${r.days_count}</td><td class="actions"><button class="btn btn-danger" onclick="deleteRoute('${r.id}')">🗑️</button></td></tr>`;
+            ['places', 'cities', 'routes'].forEach(function (tab) {
+                document.getElementById('tab-' + tab).classList.toggle('hidden', tab !== name);
             });
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        } catch (err) {
-            container.innerHTML = `<p style="color:#e74c3c;">Ошибка: ${err.message}</p>`;
+            if (name === 'cities') loadCities();
+            if (name === 'routes') loadRoutes();
         }
-    }
 
-    async function addRoute(e) {
-        e.preventDefault();
-        const cityId = document.getElementById('route-city').value;
-        const name = document.getElementById('route-name').value.trim();
-        const days = parseInt(document.getElementById('route-days').value);
-        if (!cityId) return alert('Выберите город');
-        if (!name) return alert('Введите название маршрута');
-        if (!days || days < 1) return alert('Укажите количество дней');
-        const data = {
-            city_id: cityId,
-            name,
-            description: document.getElementById('route-desc').value.trim(),
-            days_count: days,
-            difficulty: document.getElementById('route-difficulty').value
-        };
-        try {
-            const { error } = await supabase.from('route_templates').insert(data);
-            if (error) throw error;
-            alert('✅ Маршрут добавлен!');
-            document.getElementById('route-form').reset();
-            loadRoutes();
-        } catch (err) {
-            alert('❌ Ошибка: ' + err.message);
+        // Обработчики навешиваются кодом, а не атрибутами onclick:
+        // атрибут — это исполняемая строка в разметке.
+        document.querySelectorAll('.tabs button').forEach(function (button) {
+            button.addEventListener('click', function () { switchTab(button.dataset.tab); });
+        });
+
+        // --- Сообщения формы -----------------------------------------------
+
+        function message(node, text, isError) {
+            node.className = isError ? 'form-error' : 'form-ok';
+            node.textContent = text;
         }
-    }
 
-    async function deleteRoute(id) {
-        if (!confirm('Удалить маршрут?')) return;
-        try {
-            const { error } = await supabase.from('route_templates').delete().eq('id', id);
-            if (error) throw error;
-            loadRoutes();
-        } catch (err) {
-            alert('Ошибка: ' + err.message);
+        // --- Города --------------------------------------------------------
+
+        async function loadCityOptions() {
+            cities = await NF.api.listCities();
+
+            const selects = [
+                document.getElementById('place-city'),
+                document.getElementById('places-filter-city'),
+            ];
+
+            selects.forEach(function (select) {
+                dom.clear(select);
+                select.append(dom.el('option', { attrs: { value: '' }, text: '— выберите город —' }));
+                cities.forEach(function (city) {
+                    select.append(dom.el('option', {
+                        attrs: { value: city.id },
+                        text: city.name + (city.name_local ? ' (' + city.name_local + ')' : ''),
+                    }));
+                });
+            });
         }
-    }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        loadCities();
-    });
+        async function loadCities() {
+            const container = document.getElementById('cities-list');
+            dom.loading(container, 'Загружаем города…');
+            try {
+                if (cities.length === 0) cities = await NF.api.listCities();
+                if (cities.length === 0) {
+                    dom.empty(container, 'Городов нет', 'Добавь город через интерфейс Supabase.');
+                    return;
+                }
+                dom.replace(container, table(
+                    ['Название', 'Местное', 'Страна'],
+                    cities.map(function (city) {
+                        return [city.name, dom.value(city.name_local, '—'), dom.value(city.country, '—')];
+                    })
+                ));
+            } catch (error) {
+                dom.failure(container, 'Не удалось загрузить города.', error);
+            }
+        }
+
+        // --- Места ---------------------------------------------------------
+
+        function table(headers, rows, actions) {
+            const head = dom.el('tr', {}, headers.map(function (h) {
+                return dom.el('th', { text: h });
+            }).concat(actions ? [dom.el('th', { text: 'Действия' })] : []));
+
+            const body = rows.map(function (cells, index) {
+                // append() в dom.js сам различает строку и узел: строка становится
+                // текстом, узел — вставляется как есть. Разветвлять по типу не нужно.
+                const tr = dom.el('tr', {}, cells.map(function (cell) {
+                    return dom.el('td', {}, [cell]);
+                }));
+                if (actions) tr.append(dom.el('td', {}, actions(index)));
+                return tr;
+            });
+
+            return dom.el('table', { class: 'table' }, [
+                dom.el('thead', {}, head),
+                dom.el('tbody', {}, body),
+            ]);
+        }
+
+        async function loadPlaces() {
+            const container = document.getElementById('places-list');
+            const cityId = document.getElementById('places-filter-city').value;
+
+            if (!cityId) {
+                dom.empty(container, 'Выберите город', 'Места показываются по одному городу.');
+                return;
+            }
+
+            dom.loading(container, 'Загружаем места…');
+            try {
+                const places = await NF.api.listPlaces(cityId);
+                if (places.length === 0) {
+                    dom.empty(container, 'Мест нет', 'Добавь первое место формой выше.');
+                    return;
+                }
+
+                dom.replace(container, table(
+                    ['Название', 'Координаты', 'Категория', 'Время'],
+                    places.map(function (place) {
+                        return [
+                            dom.el('div', {}, [
+                                dom.el('strong', { text: place.name }),
+                                place.name_local
+                                    ? dom.el('div', { class: 'local', text: place.name_local })
+                                    : null,
+                            ]),
+                            place.lat.toFixed(4) + ', ' + place.lng.toFixed(4),
+                            dom.value(place.category, '—'),
+                            place.visit_minutes ? place.visit_minutes + ' мин' : '—',
+                        ];
+                    }),
+                    function (index) {
+                        return dom.el('button', {
+                            class: 'admin-btn admin-btn-danger',
+                            text: '🗑️',
+                            attrs: { type: 'button', title: 'Удалить место' },
+                            on: { click: function () { removePlace(places[index]); } },
+                        });
+                    }
+                ));
+            } catch (error) {
+                dom.failure(container, 'Не удалось загрузить места.', error);
+            }
+        }
+
+        async function removePlace(place) {
+            if (!window.confirm('Удалить место «' + place.name + '»?')) return;
+            try {
+                await NF.api.deletePlace(place.id);
+                loadPlaces();
+            } catch (error) {
+                console.error('Не удалось удалить место:', error);
+                window.alert('Не удалось удалить место. Подробности в консоли.');
+            }
+        }
+
+        /** Читает число из поля; пустое значение даёт null, а не 0. */
+        function numberOrNull(id) {
+            const raw = document.getElementById(id).value.trim();
+            if (raw === '') return null;
+            const parsed = Number(raw);
+            return Number.isFinite(parsed) ? parsed : null;
+        }
+
+        function textOrNull(id) {
+            const raw = document.getElementById(id).value.trim();
+            return raw === '' ? null : raw;
+        }
+
+        async function addPlace(event) {
+            event.preventDefault();
+
+            const box = document.getElementById('place-form-message');
+            const button = event.target.querySelector('button[type="submit"]');
+
+            const cityId = document.getElementById('place-city').value;
+            const name = textOrNull('place-name');
+            const lat = numberOrNull('place-lat');
+            const lng = numberOrNull('place-lng');
+
+            // Проверка повторяет ограничения базы. База — источник истины,
+            // но понятное сообщение здесь лучше, чем ошибка PostgREST.
+            if (!cityId) return message(box, 'Выберите город', true);
+            if (!name) return message(box, 'Введите название места', true);
+            if (lat === null || lng === null) {
+                return message(box, 'Координаты обязательны: без них место не попадёт в план', true);
+            }
+            if (lat < -90 || lat > 90) return message(box, 'Широта должна быть от −90 до 90', true);
+            if (lng < -180 || lng > 180) return message(box, 'Долгота должна быть от −180 до 180', true);
+
+            const minutes = numberOrNull('place-minutes');
+            if (minutes !== null && minutes <= 0) {
+                return message(box, 'Время посещения должно быть больше нуля', true);
+            }
+
+            const price = document.getElementById('place-price').value;
+
+            button.disabled = true;
+            try {
+                await NF.api.createPlace({
+                    city_id: cityId,
+                    name: name,
+                    name_local: textOrNull('place-name-local'),
+                    description: textOrNull('place-desc'),
+                    address_local: textOrNull('place-address-local'),
+                    lat: lat,
+                    lng: lng,
+                    category: document.getElementById('place-category').value || null,
+                    visit_minutes: minutes,
+                    price_level: price === '' ? null : Number(price),
+                    source: 'manual',
+                    is_published: true,
+                });
+
+                message(box, '✅ Место добавлено', false);
+                event.target.reset();
+                document.getElementById('places-filter-city').value = cityId;
+                loadPlaces();
+            } catch (error) {
+                console.error('Не удалось добавить место:', error);
+                message(box, 'Не удалось добавить место. Подробности в консоли браузера.', true);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        // --- Маршруты ------------------------------------------------------
+
+        async function loadRoutes() {
+            const container = document.getElementById('routes-list');
+            dom.loading(container, 'Загружаем маршруты…');
+            try {
+                if (cities.length === 0) cities = await NF.api.listCities();
+
+                // Запросы по городам независимы, поэтому идут параллельно.
+                // Последовательный await в цикле складывал бы их время.
+                const perCity = await Promise.all(cities.map(function (city) {
+                    return NF.api.listRoutes(city.id).then(function (routes) {
+                        return routes.map(function (route) {
+                            return { route: route, city: city };
+                        });
+                    });
+                }));
+                const all = perCity.flat();
+
+                if (all.length === 0) {
+                    dom.empty(container, 'Маршрутов нет', null);
+                    return;
+                }
+
+                dom.replace(container, table(
+                    ['Название', 'Город', 'Дней'],
+                    all.map(function (item) {
+                        return [
+                            item.route.name,
+                            item.city.name,
+                            String(dom.value(item.route.days_count, '—')),
+                        ];
+                    })
+                ));
+            } catch (error) {
+                dom.failure(container, 'Не удалось загрузить маршруты.', error);
+            }
+        }
+
+        // --- Запуск --------------------------------------------------------
+
+        document.getElementById('place-form').addEventListener('submit', addPlace);
+        document.getElementById('places-filter-city').addEventListener('change', loadPlaces);
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            try {
+                await loadCityOptions();
+            } catch (error) {
+                console.error('Не удалось загрузить список городов:', error);
+            }
+            loadPlaces();
+        });
+    })();
 </script>
 </body>
 </html>

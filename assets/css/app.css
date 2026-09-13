@@ -1,2 +1,527 @@
-/* Shared Nowhere Fast design system. This file is the target shared layer for the page refactor. */
-:root{--color-primary:#e67e22;--color-primary-dark:#d35400;--color-accent:#2c3e50;--color-bg:#fdf6f0;--color-surface:#fff;--color-text:#1a1a2e;--color-muted:#5d5d7a;--color-border:#eadfd5;--radius:16px;--shadow-sm:0 4px 16px rgba(44,62,80,.06);--font-heading:"Playfair Display",Georgia,serif;--font-body:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;font-family:var(--font-body);background:var(--color-bg);color:var(--color-text);line-height:1.6}a{color:inherit}.container{width:min(1180px,calc(100% - 40px));margin:0 auto}.site-header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--color-border)}.header-inner{min-height:72px;display:flex;align-items:center;justify-content:space-between;gap:24px}.logo{text-decoration:none;font:700 1.75rem/1 var(--font-heading)}.logo span{color:var(--color-primary)}.nav{display:flex;gap:22px;flex-wrap:wrap}.nav a{text-decoration:none;color:var(--color-muted);font-weight:600}.nav a:hover{color:var(--color-primary)}.hero{padding:88px 0 72px;text-align:center}.hero h1{font:700 clamp(2.4rem,6vw,4.4rem)/1.08 var(--font-heading);letter-spacing:-.03em;margin:0 0 20px}.hero h1 span{color:var(--color-primary)}.lead{max-width:680px;margin:0 auto 32px;color:var(--color-muted);font-size:1.13rem}.actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 20px;border:0;border-radius:999px;text-decoration:none;font-weight:700}.btn-primary{background:var(--color-primary);color:#fff}.btn-secondary{background:#fff;border:1px solid var(--color-border)}.section{padding:72px 0}.section.alt{background:#fff}.section-heading{text-align:center;max-width:720px;margin:0 auto 36px}.section-heading h2{font:700 2.25rem/1.15 var(--font-heading);margin:0 0 10px}.section-heading p{margin:0;color:var(--color-muted)}.grid{display:grid;gap:24px}.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}.card{background:#fff;border:1px solid var(--color-border);border-radius:var(--radius);box-shadow:var(--shadow-sm)}.step-card{padding:28px;text-align:center}.step-number{width:52px;height:52px;margin:0 auto 16px;display:grid;place-items:center;border-radius:50%;background:var(--color-primary);color:#fff;font-weight:800}.state{padding:48px 20px;text-align:center;color:var(--color-muted)}footer{padding:44px 0;background:var(--color-accent);color:rgba(255,255,255,.72)}footer .logo{color:#fff}@media(max-width:900px){.grid-3{grid-template-columns:1fr}}@media(max-width:680px){.container{width:min(1180px,calc(100% - 28px))}.header-inner{min-height:auto;padding:14px 0;align-items:flex-start;flex-direction:column}.nav{gap:14px}.hero{padding:64px 0 52px}}
+/**
+ * Nowhere Fast — общая дизайн-система.
+ *
+ * Этот файл существовал и раньше, но ни одна страница его не подключала:
+ * все три копировали стили внутрь себя, и токены успели разойтись.
+ * Теперь он единственный источник оформления публичных страниц.
+ *
+ * Минифицированная версия заменена читаемой: файл предназначен для правки
+ * руками, а не для экономии байтов — сборки в проекте нет.
+ */
+
+/* --- Токены ------------------------------------------------------------- */
+
+:root {
+    --color-primary: #e67e22;
+    --color-primary-dark: #d35400;
+    --color-accent: #2c3e50;
+    --color-bg: #fdf6f0;
+    --color-surface: #ffffff;
+    --color-text: #1a1a2e;
+    --color-muted: #5d5d7a;
+    --color-border: #eadfd5;
+    --color-danger: #c0392b;
+    --color-danger-bg: #fde8e8;
+    --color-warning-bg: #fef9e7;
+    --color-warning: #b7950b;
+    --color-success-bg: #eafaf1;
+    --color-success: #1e8449;
+
+    --radius: 16px;
+    --radius-sm: 8px;
+    --shadow: 0 8px 30px rgba(44, 62, 80, 0.08);
+    --shadow-hover: 0 16px 48px rgba(44, 62, 80, 0.12);
+
+    --font-heading: 'Playfair Display', Georgia, serif;
+    --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+    --transition: 0.25s ease;
+}
+
+/* --- Основа ------------------------------------------------------------- */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-body);
+    background: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.6;
+}
+
+.container {
+    width: min(1200px, 100% - 48px);
+    margin: 0 auto;
+}
+
+a { color: inherit; }
+
+img { max-width: 100%; }
+
+.visually-hidden {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* --- Шапка -------------------------------------------------------------- */
+
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--color-surface);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.04);
+    padding: 16px 0;
+}
+
+.header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.logo {
+    font-family: var(--font-heading);
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.logo span { color: var(--color-primary); }
+
+.nav {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    flex-wrap: wrap;
+}
+
+.nav a {
+    text-decoration: none;
+    font-weight: 500;
+    transition: color var(--transition);
+}
+
+.nav a:hover { color: var(--color-primary); }
+
+/* --- Кнопки ------------------------------------------------------------- */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    padding: 0 28px;
+    border: none;
+    border-radius: 60px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-primary {
+    background: var(--color-primary);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(230, 126, 34, 0.3);
+}
+
+.btn-primary:hover {
+    background: var(--color-primary-dark);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 2px solid var(--color-border);
+}
+
+.btn-secondary:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    transform: translateY(-2px);
+}
+
+.btn-small { min-height: 36px; padding: 0 20px; font-size: 0.9rem; }
+
+.btn-back {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: var(--color-muted);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color var(--transition);
+}
+
+.btn-back:hover { color: var(--color-primary); }
+
+/* --- Первый экран ------------------------------------------------------- */
+
+.hero { padding: 80px 0 60px; text-align: center; }
+
+.hero h1 {
+    font-family: var(--font-heading);
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 20px;
+}
+
+.hero h1 span { color: var(--color-primary); }
+
+.hero p {
+    font-size: 1.15rem;
+    color: var(--color-muted);
+    max-width: 620px;
+    margin: 0 auto 32px;
+}
+
+.hero-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+/* --- Секции ------------------------------------------------------------- */
+
+.section { padding: 60px 0; }
+.section-alt { background: var(--color-surface); }
+
+.section-title {
+    font-family: var(--font-heading);
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.section-sub {
+    text-align: center;
+    color: var(--color-muted);
+    margin-bottom: 40px;
+}
+
+/* --- Шаги --------------------------------------------------------------- */
+
+.steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 30px;
+    margin-top: 40px;
+}
+
+.step-card { text-align: center; padding: 32px 24px; }
+
+.step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px; height: 56px;
+    margin-bottom: 16px;
+    background: var(--color-primary);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.step-card h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 8px; }
+.step-card p { color: var(--color-muted); font-size: 0.95rem; }
+
+/* --- Карточки городов --------------------------------------------------- */
+
+.cities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+}
+
+.city-link { text-decoration: none; color: inherit; display: block; height: 100%; }
+
+.city-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 24px;
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+}
+
+.city-link:hover .city-card {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+}
+
+.city-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    margin-bottom: 16px;
+    background: #eee;
+}
+
+.city-card h3 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+
+.city-card .name-local {
+    color: var(--color-muted);
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+}
+
+.city-card .country {
+    color: var(--color-muted);
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+}
+
+.city-card p {
+    color: var(--color-muted);
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* --- Страница города ---------------------------------------------------- */
+
+.city-hero { padding: 40px 0 20px; }
+
+.city-hero h1 {
+    font-family: var(--font-heading);
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.city-hero .name-local { font-size: 1.2rem; color: var(--color-muted); }
+
+.city-hero .country { font-size: 1.1rem; color: var(--color-muted); margin-bottom: 16px; }
+
+.city-hero .description {
+    font-size: 1.1rem;
+    color: var(--color-muted);
+    max-width: 700px;
+    margin-bottom: 24px;
+}
+
+.city-hero img {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+}
+
+.city-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.city-meta-item { display: flex; flex-direction: column; }
+
+.city-meta-item .label {
+    font-size: 0.8rem;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.city-meta-item .value { font-weight: 600; }
+
+/* --- Места (ADR-0004) --------------------------------------------------- */
+
+.places-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.place-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 20px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.place-card h3 { font-size: 1.15rem; font-weight: 700; }
+
+/* Локальное написание — крупнее обычной подписи: именно его показывают
+   таксисту и вводят в навигатор, когда латиница не находится. */
+.place-card .local {
+    font-size: 1.05rem;
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.place-card .desc { color: var(--color-muted); font-size: 0.95rem; }
+
+.place-card .address { color: var(--color-muted); font-size: 0.85rem; }
+
+.place-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 12px;
+}
+
+.chip {
+    padding: 4px 12px;
+    background: var(--color-bg);
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}
+
+/* --- Карточки маршрутов ------------------------------------------------- */
+
+.route-card {
+    padding: 24px;
+    margin-bottom: 20px;
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+}
+
+.route-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+
+.route-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.route-card h3 { font-size: 1.3rem; font-weight: 700; }
+
+.route-card > p { color: var(--color-muted); margin-top: 8px; }
+
+.badge {
+    padding: 4px 14px;
+    background: var(--color-bg);
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--color-muted);
+}
+
+.badge-easy { background: var(--color-success-bg); color: var(--color-success); }
+.badge-medium { background: var(--color-warning-bg); color: var(--color-warning); }
+.badge-hard { background: var(--color-danger-bg); color: var(--color-danger); }
+
+.route-days { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--color-border); }
+
+.route-day { margin-bottom: 16px; }
+
+.route-day .day-title { font-weight: 600; margin-bottom: 4px; }
+
+.route-day .day-desc { color: var(--color-muted); font-size: 0.9rem; margin-bottom: 8px; }
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+}
+
+.activity-item .order {
+    min-width: 24px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--color-primary);
+}
+
+.activity-item .info { flex: 1; }
+.activity-item .info .name { font-weight: 500; }
+.activity-item .info .local { font-weight: 600; font-size: 0.95rem; }
+.activity-item .info .desc,
+.activity-item .info .location { font-size: 0.85rem; color: var(--color-muted); }
+
+/* --- Состояния ---------------------------------------------------------- */
+
+.state {
+    grid-column: 1 / -1;
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--color-muted);
+}
+
+.state h3 { font-size: 1.5rem; color: var(--color-text); margin-bottom: 8px; }
+
+.state-error h3 { color: var(--color-danger); }
+
+.spinner {
+    display: inline-block;
+    width: 40px; height: 40px;
+    margin-bottom: 16px;
+    border: 4px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .spinner { animation-duration: 3s; }
+    * { transition-duration: 0.01ms !important; }
+}
+
+/* --- Подвал ------------------------------------------------------------- */
+
+.site-footer {
+    padding: 40px 0;
+    background: var(--color-accent);
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+}
+
+.site-footer .logo { color: #fff; font-size: 1.5rem; }
+.site-footer p { margin-top: 8px; font-size: 0.9rem; }
+
+/* --- Адаптив ------------------------------------------------------------ */
+
+@media (max-width: 768px) {
+    .container { width: min(1200px, 100% - 32px); }
+    .header-inner { flex-direction: column; align-items: stretch; gap: 12px; }
+    .nav { justify-content: center; }
+    .cities-grid { grid-template-columns: 1fr; }
+    .city-meta { flex-direction: column; gap: 12px; }
+    .route-header { flex-direction: column; }
+}
+
+@media (max-width: 480px) {
+    .hero { padding: 56px 0 40px; }
+    .hero-buttons .btn { width: 100%; }
+}
