@@ -1,7 +1,7 @@
 -- Nowhere Fast — схема данных
 --
 -- Структура была реконструирована по запросам в коде, а 16.09.2026 СВЕРЕНА
--- с живой базой через MCP-коннектор Supabase. Совпало всё, кроме двух вещей:
+-- с живой базой через MCP-коннектор Supabase. Расхождения:
 --
 --   1. В базе были четыре таблицы, которых здесь нет: users (с password_hash),
 --      trips, trip_activities, trip_packing. Пустые, кодом не использовались,
@@ -9,9 +9,21 @@
 --   2. Поля и ограничения, объявленные ВНУТРИ create table if not exists для
 --      таблиц, которые уже существовали, в базу не попали: для созданной таблицы
 --      этот оператор не делает ничего. Они добавлены отдельным блоком в конце файла.
+--   3. ВТОРОЙ ПРОХОД, 16.09.2026. Первая сверка была неполной: она проверила
+--      наличие таблиц и колонок, но не их ТИП и не признак not null. При сверке
+--      по information_schema нашлось ещё шесть расхождений — not null на трёх
+--      внешних ключах, тип created_at у двух таблиц, три незадокументированные
+--      колонки у активностей. Всё перечислено и исправлено в конце файла,
+--      в блоке «Второй проход сверки».
 --
 -- Отсюда правило на будущее: в аддитивной миграции ограничение существующей
--- таблицы добавляется только через alter table ... add constraint.
+-- таблицы добавляется только через alter table ... add constraint. И второе:
+-- сверка схемы — это сравнение по information_schema, а не взгляд на список
+-- таблиц. Колонка на месте ещё не значит, что она того же типа.
+--
+-- КАК ПРОВЕРЯТЬ СЕБЯ. Утверждение «схема совпадает с базой» проверяется
+-- запросом к information_schema.columns и к pg_constraint, а не чтением
+-- этого файла. Дата последней такой сверки — 16.09.2026 (второй проход).
 --
 -- Файл написан АДДИТИВНО: create table if not exists / add column if not exists.
 -- Он не удаляет таблицы, не меняет типы и не трогает существующие строки.
@@ -37,7 +49,7 @@ create extension if not exists "pgcrypto";  -- gen_random_uuid()
 create table if not exists public.cities (
     id          uuid primary key default gen_random_uuid(),
     name        text not null,
-    country     text,
+    country     text not null,   -- в базе not null; проверено 16.09.2026
     description text,
     image_url   text,
     currency    text,
@@ -54,8 +66,11 @@ alter table public.cities add column if not exists name_local text;
 alter table public.cities add column if not exists lat double precision;
 alter table public.cities add column if not exists lng double precision;
 
--- Имя города используется в ссылках и в поиске, дубликаты ломают выборку .single()
-create unique index if not exists cities_name_key on public.cities (lower(name));
+-- Город уникален по паре «имя + страна», а не по одному имени: Кембридж есть
+-- в Англии и в США. Прежний индекс cities_name_key (только lower(name)) снят
+-- 16.09.2026 — см. блок «Второй проход сверки» в конце файла.
+create unique index if not exists cities_name_country_key
+    on public.cities (lower(name), lower(country));
 
 -- ---------------------------------------------------------------------------
 -- places — МЕСТО (ADR-0004)
@@ -127,7 +142,7 @@ create table if not exists public.route_templates (
     city_id     uuid not null references public.cities (id) on delete cascade,
     name        text not null,
     description text,
-    days_count  integer,
+    days_count  integer not null,   -- в базе not null; проверено 16.09.2026
     difficulty  text,
     created_at  timestamptz not null default now()
 );
@@ -182,9 +197,16 @@ create table if not exists public.route_template_activities (
     route_template_day_id uuid not null
                           references public.route_template_days (id) on delete cascade,
     order_in_day         integer not null,
-    name                 text,
+    name                 text not null,   -- в базе not null; проверено 16.09.2026
     description          text,
     location             text,
+
+    -- Колонки, существующие в базе с самого начала и заполненные у всех строк.
+    -- duration_minutes — время активности; это то, из чего планировщик строит день.
+    duration_minutes     integer,
+    type                 text,
+    is_mandatory         boolean,
+
     created_at           timestamptz not null default now(),
 
     constraint route_template_activities_order_positive check (order_in_day > 0)
@@ -311,3 +333,65 @@ $$;
 --
 -- 3. Нет таблицы посещённых мест («не предлагать то, где я уже был»).
 --    Причина: требует аккаунтов, см. пункт 1.
+
+-- ---------------------------------------------------------------------------
+-- Второй проход сверки (применено 16.09.2026)
+--
+-- Первая сверка сравнила список таблиц и колонок, но не типы и не признак
+-- not null. Сравнение по information_schema нашло ещё шесть расхождений.
+-- Все они здесь исправлены; перед применением проверено запросом, что
+-- NULL-значений в затронутых колонках нет ни одного.
+-- ---------------------------------------------------------------------------
+
+-- 1. Внешние ключи были объявлены not null ВНУТРИ create table, поэтому в базу
+--    это не попало — таблицы уже существовали. Осиротевшая строка не видна
+--    ни коду, ни политике чтения: она исчезает молча.
+alter table public.route_templates            alter column city_id               set not null;
+alter table public.route_template_days        alter column route_template_id     set not null;
+alter table public.route_template_activities  alter column route_template_day_id set not null;
+
+-- 2. created_at у cities и route_templates лежал как timestamp БЕЗ часового пояса.
+--    Планировщик путешествий работает в трёх поясах одновременно: браузер
+--    пользователя, город поездки и UTC от Postgres. Тип без пояса молча теряет
+--    один из них, и ошибка вылезает не при записи, а через месяцы — на дате,
+--    которая «вечером уже завтра».
+--
+--    Существующие значения были записаны умолчанием now(), поэтому трактуются
+--    как UTC. Это допущение, и оно здесь записано явно.
+alter table public.cities
+    alter column created_at type timestamptz using created_at at time zone 'UTC';
+alter table public.cities alter column created_at set default now();
+
+alter table public.route_templates
+    alter column created_at type timestamptz using created_at at time zone 'UTC';
+alter table public.route_templates alter column created_at set default now();
+
+-- 3. Три колонки у активностей существуют в базе с самого начала, заполнены
+--    у всех 12 строк и в этом файле не были описаны вовсе. Объявляем их явно,
+--    чтобы схема перестала врать.
+--
+--    duration_minutes особенно важен: это время посещения, то самое, без чего
+--    планировщик не может построить день. Данные уже есть — их просто никто
+--    не читает (assets/js/api.js их не выбирает).
+alter table public.route_template_activities add column if not exists duration_minutes integer;
+alter table public.route_template_activities add column if not exists type             text;
+alter table public.route_template_activities add column if not exists is_mandatory     boolean;
+
+-- 4. Город уникален по паре «имя + страна».
+--
+--    Было: уникальный индекс по lower(name). Кембридж есть в Англии и в США —
+--    второй завести нельзя, а место привязалось бы к первому попавшемуся.
+--    Колонка country в базе not null, поэтому пара всегда полна.
+drop index if exists public.cities_name_key;
+create unique index if not exists cities_name_country_key
+    on public.cities (lower(name), lower(country));
+
+-- 5. Расхождения, которые исправлены НЕ в базе, а в этом файле — потому что
+--    права была база, а врал документ:
+--
+--      cities.country                      — в базе not null (здесь было nullable)
+--      route_templates.days_count          — в базе not null
+--      route_template_activities.name      — в базе not null
+--
+--    Менять их в базе не стали: ограничение строже, чем было записано, и оно
+--    верное. Исправлено объявление выше по файлу.

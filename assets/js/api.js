@@ -21,6 +21,9 @@ NF.api = (function () {
     /** Код PostgREST: запрос с .single() не вернул ни одной строки. */
     const NOT_FOUND = 'PGRST116';
 
+    /** Символы, которые ilike трактует как шаблон, а не как текст. */
+    const PATTERN_CHARS = /[%_*]/;
+
     function fail(error) {
         const err = new Error(error.message || 'Ошибка запроса');
         err.code = error.code;
@@ -58,8 +61,15 @@ NF.api = (function () {
      *
      * maybeSingle вместо single: при дубликатах имён single бросает ошибку,
      * и страница падает вместо того, чтобы показать понятное сообщение.
+     *
+     * Имя приходит из адресной строки, то есть от кого угодно. Для ilike знаки
+     * %, _ и * — это шаблон: по ссылке city.html?city=%25 открылся бы «первый
+     * попавшийся город», и человек решил бы, что попал куда хотел. В названиях
+     * городов таких знаков не бывает, поэтому запрос просто не делается.
      */
     async function getCityByName(name) {
+        if (PATTERN_CHARS.test(String(name))) return null;
+
         const { data, error } = await client
             .from('cities')
             .select('*')
@@ -89,8 +99,44 @@ NF.api = (function () {
         return data || [];
     }
 
+    /**
+     * Кто сейчас вошёл. null — не вошёл никто.
+     *
+     * getSession читает уже сохранённую сессию и в сеть не ходит, поэтому
+     * подходит для проверки «можно ли вообще писать» до отправки запроса.
+     */
+    async function currentUserId() {
+        const { data, error } = await client.auth.getSession();
+        if (error) fail(error);
+        return data && data.session ? data.session.user.id : null;
+    }
+
+    /**
+     * Создать место.
+     *
+     * Два поля выставляются здесь, а не вызывающей страницей, и это намеренно.
+     *
+     * author_id — политика places_insert_own требует, чтобы он совпадал
+     * с auth.uid(). Страница, забывшая его передать, получала бы отказ RLS
+     * с непонятным текстом. Знание о политике живёт в слое данных.
+     *
+     * is_published — место создаётся ЧЕРНОВИКОМ. Умолчание в схеме false,
+     * и обходить его из интерфейса нельзя: иначе новое место публикуется молча.
+     */
     async function createPlace(place) {
-        const { data, error } = await client.from('places').insert(place).select().single();
+        const authorId = await currentUserId();
+        if (!authorId) {
+            const err = new Error('Запись доступна только после входа');
+            err.code = 'NO_SESSION';
+            throw err;
+        }
+
+        const row = Object.assign({}, place, {
+            author_id: authorId,
+            is_published: false,
+        });
+
+        const { data, error } = await client.from('places').insert(row).select().single();
         if (error) fail(error);
         return data;
     }
@@ -121,6 +167,7 @@ NF.api = (function () {
                 'id, name, description, days_count, difficulty, ' +
                 'route_template_days (id, day_number, name, description, ' +
                     'route_template_activities (id, order_in_day, name, description, location, ' +
+                        'duration_minutes, ' +
                         'places (id, name, name_local, address_local, lat, lng)))'
             )
             .eq('city_id', cityId)
@@ -210,6 +257,7 @@ NF.api = (function () {
         getCityById: getCityById,
         getCityByName: getCityByName,
         listPlaces: listPlaces,
+        currentUserId: currentUserId,
         createPlace: createPlace,
         deletePlace: deletePlace,
         listRoutes: listRoutes,

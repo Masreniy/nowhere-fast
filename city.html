@@ -54,7 +54,8 @@
     </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Версия зафиксирована: плавающий «@2» однажды приедет с ломающей правкой. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0"></script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/dom.js"></script>
 <script src="assets/js/api.js"></script>
@@ -135,7 +136,9 @@
                 meta.push(dom.el('span', { class: 'chip', text: '⏱ ' + place.visit_minutes + ' мин' }));
             }
             if (place.price_level !== null && place.price_level !== undefined) {
-                meta.push(dom.el('span', { class: 'chip', text: PRICE[place.price_level] || '' }));
+                // Прочерк, а не пустой чип: значение вне словаря — это неизвестность,
+                // и показать её честнее, чем нарисовать пустое место.
+                meta.push(dom.el('span', { class: 'chip', text: PRICE[place.price_level] || '—' }));
             }
 
             return dom.el('div', { class: 'place-card' }, [
@@ -158,8 +161,10 @@
                 const places = await NF.api.listPlaces(cityId);
 
                 if (places.length === 0) {
+                    // Админка писать не может: политики RLS разрешают запись только
+                    // вошедшему автору, а входа в проекте ещё нет (ADR-0005).
                     dom.empty(container, 'Мест пока нет',
-                        'Места добавляются через админку — с координатами и местным написанием.');
+                        'Места заводятся через интерфейс Supabase — с координатами и местным написанием.');
                     return;
                 }
 
@@ -184,6 +189,11 @@
                     local ? dom.el('div', { class: 'local', text: local }) : null,
                     activity.description ? dom.el('div', { class: 'desc', text: activity.description }) : null,
                     address ? dom.el('div', { class: 'location', text: '📍 ' + address }) : null,
+                    // duration_minutes лежит в базе у всех активностей с самого начала
+                    // и до 16.09.2026 не читался ни одним запросом.
+                    activity.duration_minutes
+                        ? dom.el('div', { class: 'duration', text: '⏱ ' + activity.duration_minutes + ' мин' })
+                        : null,
                 ]),
             ]);
         }

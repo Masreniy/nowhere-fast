@@ -464,6 +464,7 @@ img { max-width: 100%; }
 
 .activity-item .info { flex: 1; }
 .activity-item .info .name { font-weight: 500; }
+.activity-item .info .duration { color: var(--color-muted); font-size: 0.85rem; margin-top: 2px; }
 .activity-item .info .local { font-weight: 600; font-size: 0.95rem; }
 .activity-item .info .desc,
 .activity-item .info .location { font-size: 0.85rem; color: var(--color-muted); }
@@ -480,6 +481,10 @@ img { max-width: 100%; }
 .state h3 { font-size: 1.5rem; color: var(--color-text); margin-bottom: 8px; }
 
 .state-error h3 { color: var(--color-danger); }
+
+/* Пустота — это нормальное состояние экрана, а не ошибка: тон спокойнее. */
+.state-empty h3 { color: var(--color-muted); font-weight: 600; }
+.state-empty p { max-width: 42ch; margin: 0 auto; }
 
 .spinner {
     display: inline-block;
