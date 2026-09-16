@@ -652,14 +652,16 @@ html:has(.globe-page) { height: 100%; }
 
 .globe-city-row {
     display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap;
     gap: 12px;
     padding: 12px 0;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Название со страной занимает всё, что осталось от кнопок,
-   иначе «КНР (Китайская Народная Республика)» сползает в столбик. */
-.globe-city-row > div:first-child { flex: 1 1 auto; min-width: 0; }
+/* Название со страной занимает всё, что осталось от кнопок. Если места мало,
+   кнопки переносятся под него: иначе «КНР (Китайская Народная Республика)»
+   сползает в столбик по одному слову. */
+.globe-city-row > div:first-child { flex: 1 1 14em; min-width: 0; }
 
 .globe-city-row__name { font-size: var(--g-lg); }
 .globe-city-row__meta { font-size: var(--g-xs); color: var(--ink-faint); }
