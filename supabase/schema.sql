@@ -1,7 +1,17 @@
 -- Nowhere Fast — схема данных
 --
--- ВАЖНО: структура существующих таблиц РЕКОНСТРУИРОВАНА по запросам в коде,
--- а не выгружена из живой базы. Расхождения возможны и выявятся при применении.
+-- Структура была реконструирована по запросам в коде, а 16.09.2026 СВЕРЕНА
+-- с живой базой через MCP-коннектор Supabase. Совпало всё, кроме двух вещей:
+--
+--   1. В базе есть четыре таблицы, которых здесь нет: users (с password_hash),
+--      trips, trip_activities, trip_packing. Пустые, кодом не используются.
+--      Разбор — в supabase/cleanup-legacy.sql.
+--   2. Поля и ограничения, объявленные ВНУТРИ create table if not exists для
+--      таблиц, которые уже существовали, в базу не попали: для созданной таблицы
+--      этот оператор не делает ничего. Они добавлены отдельным блоком в конце файла.
+--
+-- Отсюда правило на будущее: в аддитивной миграции ограничение существующей
+-- таблицы добавляется только через alter table ... add constraint.
 --
 -- Файл написан АДДИТИВНО: create table if not exists / add column if not exists.
 -- Он не удаляет таблицы, не меняет типы и не трогает существующие строки.
@@ -209,11 +219,79 @@ create trigger places_touch_updated_at
     for each row execute function public.touch_updated_at();
 
 -- ---------------------------------------------------------------------------
+-- Что проглотил `create table if not exists` (применено 16.09.2026)
+--
+-- Блоки create table выше для route_template_days и route_template_activities
+-- не выполнились: таблицы уже существовали. Всё, что было объявлено внутри них,
+-- в базе отсутствовало — здесь оно добавляется явно.
+-- ---------------------------------------------------------------------------
+
+-- created_at сознательно nullable: у строк, заведённых до этой миграции, время
+-- создания неизвестно, и подставить им now() значило бы записать выдуманный факт.
+alter table public.route_template_days
+    add column if not exists created_at timestamptz default now();
+
+alter table public.route_template_activities
+    add column if not exists created_at timestamptz default now();
+
+do $$
+begin
+    if not exists (
+        select 1 from pg_constraint
+        where conname = 'route_template_days_number_positive'
+          and conrelid = 'public.route_template_days'::regclass
+    ) then
+        alter table public.route_template_days
+            add constraint route_template_days_number_positive check (day_number > 0);
+    end if;
+
+    if not exists (
+        select 1 from pg_constraint
+        where conname = 'route_template_activities_order_positive'
+          and conrelid = 'public.route_template_activities'::regclass
+    ) then
+        alter table public.route_template_activities
+            add constraint route_template_activities_order_positive check (order_in_day > 0);
+    end if;
+end $$;
+
+-- НЕ добавлено: unique (route_template_id, day_number).
+-- Данные его нарушают — у маршрута «Гуанджоу за 3 дня: классика» каждый день
+-- задвоен. Ограничение включается только после чистки, см. cleanup-legacy.sql.
+
+-- Фиксированный search_path: без него вызывающая роль может подменить схему
+-- поиска и увести вызовы функции в свои объекты.
+create or replace function public.touch_updated_at()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+    new.updated_at = now();
+    return new;
+end;
+$$;
+
+-- Координаты города лежали только в старых колонках coordinates_*, а код и схема
+-- работают с lat/lng. Переносим значения, старые колонки не удаляем: их удаление
+-- необратимо и решается отдельно.
+update public.cities
+   set lat = coordinates_lat,
+       lng = coordinates_lng
+ where lat is null
+   and coordinates_lat is not null
+   and coordinates_lng is not null;
+
+-- ---------------------------------------------------------------------------
 -- Что НЕ сделано здесь и почему
 -- ---------------------------------------------------------------------------
 --
 -- 1. Нет таблиц trips / trip_days / trip_items (поездка пользователя).
 --    Причина: аккаунты вне первой версии (ADR-0002). Появятся вместе с ними.
+--    Уточнение от 16.09.2026: в базе при этом ЛЕЖАТ таблицы trips, trip_activities,
+--    trip_packing и users — остатки прежнего подхода. Пустые, кодом не используются,
+--    здесь не описаны сознательно: они не часть целевой модели. См. cleanup-legacy.sql.
 --
 -- 2. Нет PostGIS и геоиндекса по-настоящему.
 --    Причина: на объёмах первого города обычного индекса по (lat, lng) достаточно.
