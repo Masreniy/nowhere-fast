@@ -9,31 +9,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
     <!--
-        Порядок важен: globe.css берёт токены из app.css и переопределяет их
-        только внутри .globe-page. Так же устроен admin.css.
+        Порядок важен: globe.css подключается после app.css, берёт оттуда
+        токены и гасит светлую тему внутри .globe-page. Глобальный :root
+        не трогается — остальные страницы остаются светлыми.
     -->
     <link rel="stylesheet" href="assets/css/app.css" />
     <link rel="stylesheet" href="assets/css/globe.css" />
 </head>
+<!--
+    Страница — одно тёмное полотно. Отдельной шапки и отдельного подвала
+    здесь нет намеренно: светлые полосы сверху и снизу разрезали сцену
+    на три куска. Весь интерфейс лежит поверх сцены стеклянными блоками.
+-->
 <body class="globe-page">
-
-<header class="site-header">
-    <div class="container header-inner">
-        <!-- Глобус и есть главная, поэтому логотип ведёт на эту же страницу. -->
-        <a href="globe.html" class="logo">Nowhere<span>Fast</span></a>
-        <nav class="nav" data-i18n-attr="aria-label:nav.aria" aria-label="Основная навигация">
-            <!--
-                Путь для того, кто не хочет крутить шар: список городов,
-                которые уже есть в продукте. Это кнопка, а не ссылка: список
-                открывается поверх сцены, страница никуда не уходит.
-            -->
-            <button type="button" id="globe-cities-open" class="globe-navlink"
-                    data-i18n="nav.cities">Города</button>
-        </nav>
-        <!-- Язык — свойство всего проекта, поэтому переключатель есть на каждой странице. -->
-        <div id="lang-switcher"></div>
-    </div>
-</header>
 
 <main class="globe-stage">
     <canvas id="globe-scene"></canvas>
@@ -48,25 +36,47 @@
     <div class="globe-labels" id="globe-labels"></div>
 
     <div class="globe-ui">
-        <div class="globe-tools">
-            <div class="globe-search">
-                <label class="visually-hidden" for="globe-search-input"
-                       data-i18n="globe.search">Страна или город</label>
-                <input id="globe-search-input" class="globe-control globe-search__input" type="text"
-                       autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false"
-                       aria-controls="globe-search-results"
-                       data-i18n-attr="placeholder:globe.search" placeholder="Страна или город" />
-                <div class="globe-results" id="globe-search-results" role="listbox" hidden></div>
-            </div>
+        <header class="globe-top">
+            <!-- Глобус и есть главная, поэтому логотип ведёт на эту же страницу. -->
+            <a href="globe.html" class="globe-brand">
+                <span class="globe-brand__mark" aria-hidden="true"></span>
+                <span>
+                    <span class="globe-brand__name">Nowhere<span>Fast</span></span>
+                    <span class="globe-brand__sub" data-i18n="globe.tagline">Планировщик путешествий</span>
+                </span>
+            </a>
 
-            <button id="globe-face-north" class="globe-control globe-control--compass" type="button" hidden>
-                <span class="globe-compass" aria-hidden="true"><i id="globe-compass-arrow"></i></span>
-                <span data-i18n="globe.northUp">Север вверх</span>
-            </button>
-            <button id="globe-sky" class="globe-control" type="button" aria-pressed="false" hidden></button>
-            <button id="globe-constellations" class="globe-control" type="button" aria-pressed="false"
-                    data-i18n="globe.constellations">Созвездия</button>
-        </div>
+            <div class="globe-tools">
+                <div class="globe-search">
+                    <label class="visually-hidden" for="globe-search-input"
+                           data-i18n="globe.search">Страна или город</label>
+                    <input id="globe-search-input" class="globe-control globe-search__input" type="text"
+                           autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false"
+                           aria-controls="globe-search-results"
+                           data-i18n-attr="placeholder:globe.search" placeholder="Страна или город" />
+                    <div class="globe-results" id="globe-search-results" role="listbox" hidden></div>
+                </div>
+
+                <!--
+                    Путь для того, кто не хочет крутить шар: список городов,
+                    которые уже есть в продукте. Список открывается поверх
+                    сцены, страница никуда не уходит.
+                -->
+                <button type="button" id="globe-cities-open" class="globe-control"
+                        data-i18n="nav.cities">Города</button>
+
+                <button id="globe-face-north" class="globe-control globe-control--compass" type="button" hidden>
+                    <span class="globe-compass" aria-hidden="true"><i id="globe-compass-arrow"></i></span>
+                    <span data-i18n="globe.northUp">Север вверх</span>
+                </button>
+                <button id="globe-sky" class="globe-control" type="button" aria-pressed="false" hidden></button>
+                <button id="globe-constellations" class="globe-control" type="button" aria-pressed="false"
+                        data-i18n="globe.constellations">Созвездия</button>
+
+                <!-- Язык — свойство всего проекта, поэтому переключатель есть на каждой странице. -->
+                <div id="lang-switcher"></div>
+            </div>
+        </header>
 
         <div class="globe-middle">
             <h1 class="globe-hero" data-i18n="globe.title">Не что посмотреть, а в каком порядке</h1>
@@ -86,7 +96,7 @@
             </aside>
         </div>
 
-        <div class="globe-bottom">
+        <footer class="globe-bottom">
             <div class="globe-bottom__left">
                 <button class="globe-chip" id="globe-origin-chip" type="button" hidden></button>
 
@@ -105,16 +115,46 @@
                     <span data-i18n="globe.click">клик — выбрать</span>
                     <span data-i18n="globe.reset">esc — сброс</span>
                 </div>
+
+                <!--
+                    Атрибуция обязательна по лицензиям: OpenStreetMap — ODbL
+                    (ADR-0006), GeoNames — CC BY 4.0 (ADR-0010), каталог звёзд —
+                    BSD-3-Clause, NASA просит указывать источник снимка. Полный
+                    список — в NOTICE. Строка видна всегда и не прячется за клик:
+                    это критерий AC-009, а не оформление. Названия лицензий
+                    не переводятся — это имена собственные.
+                -->
+                <div class="globe-credits">
+                    <span data-i18n="footer.copyright">&copy; 2026 Сделано для путешественников.</span>
+                    <span>
+                        <span data-i18n="footer.data">Данные о местах — </span><a
+                            href="https://www.openstreetmap.org/copyright" rel="noopener"
+                            data-i18n="footer.osm">© участники OpenStreetMap</a>, ODbL
+                    </span>
+                    <span>
+                        <span data-i18n="footer.imagery">снимок поверхности — </span><a
+                            href="https://visibleearth.nasa.gov/" rel="noopener">NASA Visible Earth</a>
+                    </span>
+                    <span>
+                        <span data-i18n="footer.outlines">очертания стран — </span><a
+                            href="https://www.naturalearthdata.com/" rel="noopener">Natural Earth</a>
+                    </span>
+                    <span>
+                        <span data-i18n="footer.geonames">справочник городов — </span><a
+                            href="https://www.geonames.org/" rel="noopener">GeoNames</a>, <a
+                            href="https://creativecommons.org/licenses/by/4.0/" rel="noopener">CC BY 4.0</a>
+                    </span>
+                    <span>
+                        <span data-i18n="footer.starcat">каталог звёзд — </span><a
+                            href="https://github.com/ofrohn/d3-celestial" rel="noopener">d3-celestial</a>, BSD-3-Clause
+                    </span>
+                </div>
             </div>
 
             <div class="globe-meters" id="globe-meters"></div>
-        </div>
+        </footer>
     </div>
 
-    <!--
-        Список городов, которые уже есть в продукте. Второй путь внутрь,
-        мимо глобуса: не все хотят крутить шар, чтобы понять, что здесь есть.
-    -->
     <section class="globe-sheet" id="globe-cities" hidden aria-labelledby="globe-cities-title">
         <div class="globe-sheet__box">
             <div class="globe-sheet__head">
@@ -142,38 +182,6 @@
         <span class="globe-boot__bar"><i></i></span>
     </div>
 </main>
-
-<footer class="site-footer">
-    <div class="container globe-footer">
-        <span class="logo">Nowhere<span>Fast</span></span>
-        <span data-i18n="footer.copyright">&copy; 2026 Сделано для путешественников.</span>
-        <!--
-            Атрибуция обязательна по лицензиям: OpenStreetMap — ODbL (ADR-0006),
-            GeoNames — CC BY 4.0 (ADR-0010), каталог звёзд — BSD-3-Clause,
-            NASA просит указывать источник снимка. Полный список — в NOTICE.
-            Строка видна всегда и не прячется: это критерий AC-009.
-            Названия лицензий не переводятся — это имена собственные.
-        -->
-        <span class="attribution">
-            <span data-i18n="footer.data">Данные о местах — </span><a
-                href="https://www.openstreetmap.org/copyright" rel="noopener"
-                data-i18n="footer.osm">© участники OpenStreetMap</a>, ODbL
-            ·
-            <span data-i18n="footer.imagery">снимок поверхности — </span><a
-                href="https://visibleearth.nasa.gov/" rel="noopener">NASA Visible Earth</a>
-            ·
-            <span data-i18n="footer.outlines">очертания стран — </span><a
-                href="https://www.naturalearthdata.com/" rel="noopener">Natural Earth</a>
-            ·
-            <span data-i18n="footer.geonames">справочник городов — </span><a
-                href="https://www.geonames.org/" rel="noopener">GeoNames</a>, <a
-                href="https://creativecommons.org/licenses/by/4.0/" rel="noopener">CC BY 4.0</a>
-            ·
-            <span data-i18n="footer.starcat">каталог звёзд — </span><a
-                href="https://github.com/ofrohn/d3-celestial" rel="noopener">d3-celestial</a>, BSD-3-Clause
-        </span>
-    </div>
-</footer>
 
 <!-- Версия зафиксирована: плавающий «@2» однажды приедет с ломающей правкой. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0"></script>
