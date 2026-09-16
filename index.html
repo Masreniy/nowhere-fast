@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nowhere Fast — Планировщик путешествий</title>
-    <meta name="description" content="Планировщик путешествий, который собирает связный маршрут по городу: без возвратов, крюков и потерянных дней." />
+    <title data-i18n="page.index.title">Nowhere Fast — Планировщик путешествий</title>
+    <meta name="description" data-i18n-attr="content:page.index.desc" content="Планировщик путешествий, который собирает связный маршрут по городу: без возвратов, крюков и потерянных дней." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
@@ -15,47 +15,49 @@
 <header class="site-header">
     <div class="container header-inner">
         <a href="index.html" class="logo">Nowhere<span>Fast</span></a>
-        <nav class="nav" aria-label="Основная навигация">
-            <a href="index.html">Главная</a>
-            <a href="#cities">Города</a>
+        <nav class="nav" data-i18n-attr="aria-label:nav.aria" aria-label="Основная навигация">
+            <a href="index.html" data-i18n="nav.home">Главная</a>
+            <a href="#cities" data-i18n="nav.cities">Города</a>
         </nav>
+        <!-- Язык — свойство всего проекта, поэтому переключатель есть на каждой странице. -->
+        <div id="lang-switcher"></div>
     </div>
 </header>
 
 <main>
     <section class="hero">
         <div class="container">
-            <h1>Спланируй поездку<br /><span>без потерянных дней</span></h1>
-            <p>
+            <h1><span class="hero-line" data-i18n="hero.titleA">Спланируй поездку</span><br /><span data-i18n="hero.titleB">без потерянных дней</span></h1>
+            <p data-i18n="hero.lead">
                 Проблема не в том, что негде узнать, куда пойти. Проблема в порядке:
                 час туда, час обратно, а назавтра снова в ту же сторону.
                 Nowhere Fast собирает маршрут связно.
             </p>
             <div class="hero-buttons">
-                <a href="#cities" class="btn btn-primary">Выбрать город</a>
+                <a href="#cities" class="btn btn-primary" data-i18n="hero.cta">Выбрать город</a>
             </div>
         </div>
     </section>
 
     <section class="section section-alt">
         <div class="container">
-            <h2 class="section-title">Как это работает</h2>
-            <p class="section-sub">Три шага — и день собран</p>
+            <h2 class="section-title" data-i18n="how.title">Как это работает</h2>
+            <p class="section-sub" data-i18n="how.sub">Три шага — и день собран</p>
             <div class="steps-grid">
                 <div class="step-card">
                     <div class="step-number">1</div>
-                    <h3>Выбери город и даты</h3>
-                    <p>Сколько дней есть и откуда начинаешь день</p>
+                    <h3 data-i18n="how.step1.title">Выбери город и даты</h3>
+                    <p data-i18n="how.step1.text">Сколько дней есть и откуда начинаешь день</p>
                 </div>
                 <div class="step-card">
                     <div class="step-number">2</div>
-                    <h3>Отметь, что хочешь</h3>
-                    <p>Пара мест, которые точно интересны. Остальное подберётся рядом</p>
+                    <h3 data-i18n="how.step2.title">Отметь, что хочешь</h3>
+                    <p data-i18n="how.step2.text">Пара мест, которые точно интересны. Остальное подберётся рядом</p>
                 </div>
                 <div class="step-card">
                     <div class="step-number">3</div>
-                    <h3>Получи связный план</h3>
-                    <p>По дням, с местными названиями и адресами. Каждое число объяснимо</p>
+                    <h3 data-i18n="how.step3.title">Получи связный план</h3>
+                    <p data-i18n="how.step3.text">По дням, с местными названиями и адресами. Каждое число объяснимо</p>
                 </div>
             </div>
         </div>
@@ -63,8 +65,8 @@
 
     <section class="section" id="cities">
         <div class="container">
-            <h2 class="section-title">Куда отправимся?</h2>
-            <p class="section-sub">Выбери направление</p>
+            <h2 class="section-title" data-i18n="cities.title">Куда отправимся?</h2>
+            <p class="section-sub" data-i18n="cities.sub">Выбери направление</p>
             <div id="cities-container"></div>
         </div>
     </section>
@@ -73,14 +75,16 @@
 <footer class="site-footer">
     <div class="container">
         <div class="logo">Nowhere<span>Fast</span></div>
-        <p>&copy; 2026 Сделано для путешественников.</p>
+        <p data-i18n="footer.copyright">&copy; 2026 Сделано для путешественников.</p>
         <!--
             Атрибуция обязательна по лицензии ODbL: данные о местах взяты
             из OpenStreetMap. Убирать нельзя — это условие использования.
+            Название лицензии не переводится — это имя собственное.
         -->
         <p class="attribution">
-            Данные о местах — <a href="https://www.openstreetmap.org/copyright"
-            rel="noopener">© участники OpenStreetMap</a>, ODbL
+            <span data-i18n="footer.data">Данные о местах — </span><a
+            href="https://www.openstreetmap.org/copyright" rel="noopener"
+            data-i18n="footer.osm">© участники OpenStreetMap</a>, ODbL
         </p>
     </div>
 </footer>
@@ -89,12 +93,18 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0"></script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/dom.js"></script>
+<script src="assets/js/i18n-strings.js"></script>
+<script src="assets/js/i18n.js"></script>
 <script src="assets/js/api.js"></script>
 <script>
     (function () {
         'use strict';
 
         const dom = NF.dom;
+        const t = NF.i18n.t;
+
+        /** Загруженные города. Смена языка перерисовывает их без нового запроса. */
+        let cities = null;
 
         /**
          * Карточка города.
@@ -107,8 +117,8 @@
                 dom.image(city.image_url, city.name),
                 dom.el('h3', { text: city.name }),
                 city.name_local ? dom.el('div', { class: 'name-local', text: city.name_local }) : null,
-                dom.el('div', { class: 'country', text: dom.value(city.country, '📍 Страна не указана') }),
-                dom.el('p', { text: dom.value(city.description, 'Описание пока не добавлено') }),
+                dom.el('div', { class: 'country', text: dom.value(city.country, t('city.noCountry')) }),
+                dom.el('p', { text: dom.value(city.description, t('city.noDescription')) }),
             ]);
 
             return dom.el('a', {
@@ -117,28 +127,47 @@
             }, card);
         }
 
+        /**
+         * Рисует то, что уже загружено.
+         *
+         * Отделено от загрузки намеренно: смена языка меняет подписи внутри
+         * карточек («Страна не указана»), но не повод ходить в сеть заново.
+         */
+        function renderCities() {
+            const container = document.getElementById('cities-container');
+            if (cities === null) return;
+
+            if (cities.length === 0) {
+                // Раньше здесь звали в админку. Она не заводит города вообще,
+                // а запись в базу закрыта политиками до появления входа.
+                dom.empty(container, t('cities.emptyTitle'), t('cities.emptyText'));
+                return;
+            }
+
+            dom.replace(container, dom.el('div', { class: 'cities-grid' }, cities.map(cityCard)));
+        }
+
         async function loadCities() {
             const container = document.getElementById('cities-container');
-            dom.loading(container, 'Загружаем города…');
+            dom.loading(container, t('cities.loading'));
 
             try {
-                const cities = await NF.api.listCities();
-
-                if (cities.length === 0) {
-                    // Раньше здесь звали в админку. Она не заводит города вообще,
-                    // а запись в базу закрыта политиками до появления входа.
-                    dom.empty(container, '😕 Городов пока нет',
-                        'Города заводятся через интерфейс Supabase — вход в проекте ещё не сделан.');
-                    return;
-                }
-
-                dom.replace(container, dom.el('div', { class: 'cities-grid' }, cities.map(cityCard)));
+                cities = await NF.api.listCities();
+                renderCities();
             } catch (error) {
-                dom.failure(container, 'Не удалось загрузить список городов. Попробуй обновить страницу.', error);
+                cities = null;
+                dom.failure(container, t('cities.failure'), error);
             }
         }
 
-        document.addEventListener('DOMContentLoaded', loadCities);
+        function init() {
+            NF.i18n.apply(document);
+            NF.i18n.mountSwitcher(document.getElementById('lang-switcher'));
+            NF.i18n.onChange(renderCities);
+            loadCities();
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
     })();
 </script>
 </body>
