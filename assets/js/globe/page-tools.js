@@ -27,7 +27,7 @@ NF.globeTools = (function () {
     const ORIGIN_SOURCE = {
         gps: 'globe.originGps',
         zone: 'globe.originZone',
-        manual: 'globe.setOrigin',
+        manual: 'globe.originManual',
     };
 
     function node(id) { return document.getElementById(id); }
@@ -101,7 +101,7 @@ NF.globeTools = (function () {
                     dom.el('span', { text: t('globe.here') + ': ' +
                         (origin.name || ctx.format.coord(origin.lat, origin.lng)) }),
                     dom.el('span', { class: 'globe-chip__how',
-                        text: t(ORIGIN_SOURCE[origin.source] || 'globe.setOrigin') }),
+                        text: t(ORIGIN_SOURCE[origin.source] || 'globe.originManual') }),
                 ]);
                 delete chip.dataset.ask;
             }
