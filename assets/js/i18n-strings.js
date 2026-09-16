@@ -48,6 +48,15 @@ NF.i18nStrings = {
     'footer.data': { ru: 'Данные о местах — ', en: 'Place data — ', zh: '地点数据 — ', es: 'Datos de los lugares — ', ar: 'بيانات الأماكن — ', hi: 'स्थानों का डेटा — ', pt: 'Dados dos locais — ', fr: 'Données des lieux — ', de: 'Ortsdaten — ', ja: '場所のデータ — ' },
     'footer.osm': { ru: '© участники OpenStreetMap', en: '© OpenStreetMap contributors', zh: '© OpenStreetMap 贡献者', es: '© colaboradores de OpenStreetMap', ar: '© مساهمو OpenStreetMap', hi: '© OpenStreetMap योगदानकर्ता', pt: '© colaboradores do OpenStreetMap', fr: '© les contributeurs OpenStreetMap', de: '© OpenStreetMap-Mitwirkende', ja: '© OpenStreetMap 貢献者' },
 
+    // Вводные слова к строкам атрибуции в подвале.
+    // Это обязательства лицензий (CC BY 4.0 у GeoNames, ODbL у OpenStreetMap,
+    // BSD-3-Clause у каталога звёзд), а не украшение: сокращать их до значков
+    // нельзя, человек должен понимать, чьи это данные.
+    'footer.imagery': { ru: 'Снимок поверхности — ', en: 'Surface imagery — ', zh: '地表影像 — ', es: 'Imagen de la superficie — ', ar: 'صورة السطح — ', hi: 'सतह की तस्वीर — ', pt: 'Imagem da superfície — ', fr: 'Image de la surface — ', de: 'Oberflächenaufnahme — ', ja: '地表の画像 — ' },
+    'footer.outlines': { ru: 'Очертания стран — ', en: 'Country outlines — ', zh: '国界轮廓 — ', es: 'Contornos de los países — ', ar: 'حدود الدول — ', hi: 'देशों की रूपरेखा — ', pt: 'Contornos dos países — ', fr: 'Contours des pays — ', de: 'Länderumrisse — ', ja: '国の輪郭 — ' },
+    'footer.geonames': { ru: 'Справочник городов — ', en: 'City directory — ', zh: '城市名录 — ', es: 'Directorio de ciudades — ', ar: 'دليل المدن — ', hi: 'शहरों की सूची — ', pt: 'Diretório de cidades — ', fr: 'Répertoire des villes — ', de: 'Städteverzeichnis — ', ja: '都市の一覧 — ' },
+    'footer.starcat': { ru: 'Каталог звёзд — ', en: 'Star catalogue — ', zh: '恒星星表 — ', es: 'Catálogo de estrellas — ', ar: 'فهرس النجوم — ', hi: 'तारों की सूची — ', pt: 'Catálogo de estrelas — ', fr: 'Catalogue d’étoiles — ', de: 'Sternkatalog — ', ja: '星表 — ' },
+
     // --- Единицы измерения ---------------------------------------------------
     // Ключ без суффикса обязателен: он отвечает за формы, которых мы не завели
     // (у арабского их шесть). Формы .few и .many нужны русскому и арабскому;
@@ -403,5 +412,60 @@ NF.i18nStrings = {
     'globe.orbitView': { ru: 'Из космоса', en: 'From space', zh: '从太空看', es: 'Desde el espacio', ar: 'من الفضاء', hi: 'अंतरिक्ष से', pt: 'Do espaço', fr: 'Depuis l\'espace', de: 'Aus dem All', ja: '宇宙から' },
     'globe.northUp': { ru: 'Север вверх', en: 'North up', zh: '正北朝上', es: 'Norte arriba', ar: 'الشمال للأعلى', hi: 'उत्तर ऊपर', pt: 'Norte acima', fr: 'Nord en haut', de: 'Norden oben', ja: '北を上に' },
     'globe.km': { ru: 'км', en: 'km', zh: '公里', es: 'km', ar: 'كم', hi: 'किमी', pt: 'km', fr: 'km', de: 'km', ja: 'km' },
+
+    // Отказы страницы глобуса. Человек видит их ВМЕСТО сцены, поэтому текст
+    // объясняет, что делать дальше, а не только сообщает о беде.
+
+    'globe.fileTitle': { ru: 'Страница открыта файлом с диска', en: 'The page was opened as a file from disk', zh: '页面是以本地文件方式打开的', es: 'La página se abrió como archivo del disco', ar: 'فُتحت الصفحة كملف من القرص', hi: 'पेज डिस्क से फ़ाइल के रूप में खोला गया है', pt: 'A página foi aberta como ficheiro do disco', fr: 'La page a été ouverte comme un fichier du disque', de: 'Die Seite wurde als Datei von der Festplatte geöffnet', ja: 'ページがディスク上のファイルとして開かれています' },
+    'globe.fileHint': {
+        ru: 'Трёхмерная карта так не работает: браузер запрещает читать пиксели картинки, лежащей рядом на диске. Открой сайт по обычной ссылке или подними локальный сервер.',
+        en: 'The 3D map does not work this way: the browser forbids reading the pixels of an image lying next to the file on disk. Open the site by its normal link or start a local server.',
+        zh: '三维地图这样打不开：浏览器禁止读取磁盘上相邻图片的像素。请通过正常网址访问，或启动一个本地服务器。',
+        es: 'El mapa tridimensional no funciona así: el navegador prohíbe leer los píxeles de una imagen que está junto al archivo en el disco. Abre el sitio por su enlace normal o levanta un servidor local.',
+        ar: 'الخريطة ثلاثية الأبعاد لا تعمل هكذا: يمنع المتصفح قراءة بكسلات صورة موجودة بجوار الملف على القرص. افتح الموقع عبر رابطه المعتاد أو شغِّل خادمًا محليًا.',
+        hi: 'त्रि-आयामी नक्शा ऐसे काम नहीं करता: ब्राउज़र डिस्क पर पड़ी बगल की तस्वीर के पिक्सेल पढ़ने नहीं देता। साइट को सामान्य लिंक से खोलें या एक लोकल सर्वर चलाएँ।',
+        pt: 'O mapa tridimensional não funciona assim: o navegador proíbe ler os píxeis de uma imagem que está ao lado do ficheiro no disco. Abre o site pelo link normal ou levanta um servidor local.',
+        fr: "La carte en 3D ne fonctionne pas ainsi : le navigateur interdit de lire les pixels d'une image posée à côté du fichier sur le disque. Ouvre le site par son lien habituel ou lance un serveur local.",
+        de: 'Die 3D-Karte funktioniert so nicht: Der Browser verbietet es, die Pixel eines Bildes zu lesen, das neben der Datei auf der Festplatte liegt. Öffne die Seite über ihren normalen Link oder starte einen lokalen Server.',
+        ja: '3Dの地図はこの方法では動きません。ブラウザは、ディスク上の隣にある画像のピクセルを読み取ることを禁じています。通常のリンクからサイトを開くか、ローカルサーバーを立ててください。',
+    },
+    'globe.dataTitle': { ru: 'Справочник стран не загрузился', en: 'The country directory did not load', zh: '国家名录没有加载出来', es: 'El directorio de países no se cargó', ar: 'لم يُحمَّل دليل الدول', hi: 'देशों की सूची लोड नहीं हुई', pt: 'O diretório de países não carregou', fr: "Le répertoire des pays ne s'est pas chargé", de: 'Das Länderverzeichnis wurde nicht geladen', ja: '国の一覧を読み込めませんでした' },
+    'globe.dataHint': { ru: 'Связи с базой нет. Попробуй обновить страницу.', en: 'There is no connection to the database. Try refreshing the page.', zh: '连接不到数据库。请尝试刷新页面。', es: 'No hay conexión con la base de datos. Prueba a actualizar la página.', ar: 'لا يوجد اتصال بقاعدة البيانات. جرّب تحديث الصفحة.', hi: 'डेटाबेस से संपर्क नहीं है। पेज रीफ़्रेश करके देखें।', pt: 'Não há ligação à base de dados. Tenta atualizar a página.', fr: 'Pas de connexion à la base de données. Essaie de rafraîchir la page.', de: 'Keine Verbindung zur Datenbank. Versuche die Seite neu zu laden.', ja: 'データベースに接続できません。ページを再読み込みしてみてください。' },
+    'globe.fatalCities': { ru: 'А поехать можно сюда', en: 'You can still go here', zh: '不过还是可以去这些地方', es: 'Aun así, puedes ir aquí', ar: 'ومع ذلك يمكنك الذهاب إلى هنا', hi: 'फिर भी, आप यहाँ जा सकते हैं', pt: 'Mesmo assim, podes ir aqui', fr: 'Tu peux quand même aller ici', de: 'Hinfahren kannst du trotzdem hierher', ja: 'それでも、ここへは行けます' },
+
+    // Связь глобуса с продуктом: у какого города на шаре есть содержание.
+
+    'globe.inProduct': { ru: 'есть в Nowhere Fast', en: 'in Nowhere Fast', zh: '已收录在 Nowhere Fast', es: 'está en Nowhere Fast', ar: 'متوفرة في Nowhere Fast', hi: 'Nowhere Fast में मौजूद', pt: 'está no Nowhere Fast', fr: 'présent dans Nowhere Fast', de: 'in Nowhere Fast vorhanden', ja: 'Nowhere Fast にあります' },
+    'globe.noCity': { ru: 'Этого города у нас пока нет', en: 'We do not have this city yet', zh: '我们还没有这座城市', es: 'Todavía no tenemos esta ciudad', ar: 'لا توجد لدينا هذه المدينة بعد', hi: 'यह शहर अभी हमारे पास नहीं है', pt: 'Ainda não temos esta cidade', fr: "Nous n'avons pas encore cette ville", de: 'Diese Stadt haben wir noch nicht', ja: 'この都市はまだありません' },
+    'globe.countryHas': { ru: 'В этой стране уже есть города:', en: 'In this country we already have:', zh: '在这个国家，我们已经有：', es: 'En este país ya tenemos:', ar: 'في هذه الدولة لدينا بالفعل:', hi: 'इस देश में हमारे पास पहले से हैं:', pt: 'Neste país já temos:', fr: 'Dans ce pays, nous avons déjà :', de: 'In diesem Land haben wir schon:', ja: 'この国には、すでにこちらがあります:' },
+    'globe.countryEmpty': { ru: 'В этой стране у нас пока ничего нет', en: 'We have nothing in this country yet', zh: '这个国家我们还没有任何内容', es: 'Todavía no tenemos nada en este país', ar: 'ليس لدينا شيء في هذه الدولة بعد', hi: 'इस देश में हमारे पास अभी कुछ नहीं है', pt: 'Ainda não temos nada neste país', fr: "Nous n'avons encore rien dans ce pays", de: 'In diesem Land haben wir noch nichts', ja: 'この国にはまだ何もありません' },
+
+    // Список городов поверх сцены — путь для того, кто не хочет крутить шар.
+
+    'globe.citiesTitle': { ru: 'Куда уже можно поехать', en: 'Where you can already go', zh: '现在就能去的地方', es: 'Adónde ya puedes ir', ar: 'إلى أين يمكنك الذهاب الآن', hi: 'अभी कहाँ जाया जा सकता है', pt: 'Para onde já podes ir', fr: 'Où tu peux déjà aller', de: 'Wohin du schon fahren kannst', ja: 'いま行ける場所' },
+    'globe.citiesLead': { ru: 'Выбери город из списка — или найди его на глобусе', en: 'Pick a city from the list — or find it on the globe', zh: '从列表中选一座城市，或者在地球上找到它', es: 'Elige una ciudad de la lista o búscala en el globo', ar: 'اختر مدينة من القائمة — أو ابحث عنها على الكرة الأرضية', hi: 'सूची से शहर चुनें — या उसे ग्लोब पर ढूँढें', pt: 'Escolhe uma cidade da lista — ou encontra-a no globo', fr: 'Choisis une ville dans la liste — ou trouve-la sur le globe', de: 'Wähle eine Stadt aus der Liste — oder finde sie auf dem Globus', ja: 'リストから都市を選ぶか、地球儀の上で探してください' },
+    'globe.citiesEmpty': { ru: 'Городов пока нет ни одного', en: 'There are no cities yet', zh: '目前一座城市也没有', es: 'Todavía no hay ninguna ciudad', ar: 'لا توجد أي مدينة بعد', hi: 'अभी एक भी शहर नहीं है', pt: 'Ainda não há nenhuma cidade', fr: "Il n'y a encore aucune ville", de: 'Es gibt noch keine einzige Stadt', ja: 'まだ一つも都市がありません' },
+    'globe.citiesShow': { ru: 'Показать на глобусе', en: 'Show on the globe', zh: '在地球上显示', es: 'Mostrar en el globo', ar: 'أظهرها على الكرة الأرضية', hi: 'ग्लोब पर दिखाएँ', pt: 'Mostrar no globo', fr: 'Montrer sur le globe', de: 'Auf dem Globus zeigen', ja: '地球儀で表示' },
+
+    // Точка отсчёта: ни геолокация, ни часовой пояс не сработали.
+
+    'globe.originManual': { ru: 'Не вышло определить, откуда ты. Выбери точку отсчёта сам', en: 'We could not work out where you are. Pick your starting point yourself', zh: '没能确定你在哪里。请自己选择出发点', es: 'No pudimos determinar dónde estás. Elige tú mismo el punto de partida', ar: 'لم نتمكّن من تحديد مكانك. اختر نقطة البداية بنفسك', hi: 'हम तय नहीं कर सके कि आप कहाँ हैं। शुरुआती बिंदु खुद चुनें', pt: 'Não conseguimos determinar onde estás. Escolhe tu mesmo o ponto de partida', fr: "Nous n'avons pas pu déterminer où tu es. Choisis toi-même ton point de départ", de: 'Wir konnten nicht ermitteln, wo du bist. Wähle deinen Ausgangspunkt selbst', ja: 'あなたの居場所を特定できませんでした。出発点を自分で選んでください' },
+
+    // --- Админка: дозаполнение написаний городов ----------------------------
+    // Раздел admin.* — внутренний инструмент владельца, поэтому, как и весь
+    // остальной admin.*, переведён на русский и английский; остальные девять
+    // языков получают английскую строку запасным путём (см. шапку файла).
+
+    'admin.geoNames.title': { ru: '🈯 Написания городов', en: '🈯 City names' },
+    'admin.geoNames.note': { ru: 'Справочник городов приходит латиницей. Написания на языках интерфейса собираются слоями: широкий слой из Natural Earth заливается целиком, точечный — медленно дозаполняется из OpenStreetMap для тех городов, которые действительно понадобились.', en: 'The city gazetteer arrives in Latin script. Names in the interface languages are collected in layers: a wide layer from Natural Earth is loaded in full, and a point layer is slowly topped up from OpenStreetMap for the cities that are actually needed.' },
+    'admin.geoNames.total': { ru: 'Городов в справочнике', en: 'Cities in the gazetteer' },
+    'admin.geoNames.withNames': { ru: 'С написаниями', en: 'With names' },
+    'admin.geoNames.untried': { ru: 'Осталось спросить', en: 'Left to ask' },
+    'admin.geoNames.emptyResult': { ru: 'Спрашивали, источник не дал', en: 'Asked, source gave nothing' },
+    'admin.geoNames.lastChecked': { ru: 'Последнее дозаполнение', en: 'Last top-up' },
+    'admin.geoNames.never': { ru: 'ещё ни разу', en: 'never yet' },
+    'admin.geoNames.byLanguage': { ru: 'По языкам', en: 'By language' },
+    'admin.geoNames.empty': { ru: 'Справочник городов ещё не залит — считать нечего.', en: 'The city gazetteer is not loaded yet — nothing to count.' },
+    'admin.geoNames.failure': { ru: 'Не удалось получить сводку по написаниям', en: 'Could not load the names summary' },
 
 };
