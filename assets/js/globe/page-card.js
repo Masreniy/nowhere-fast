@@ -276,9 +276,21 @@ NF.globeCard = (function () {
             return !node('globe-cities').hidden;
         }
 
+        /**
+         * Ссылка «Города» на странице города и на странице плана ведёт сюда
+         * с якорем #cities. На прежнем лендинге это был раздел со списком;
+         * здесь списка в разметке нет — он открывается поверх сцены. Без этой
+         * обработки ссылка вела бы на первую страницу и молча ничего не делала.
+         */
+        function openFromHash() {
+            if (window.location.hash === '#cities') openList();
+        }
+
         function bind() {
             node('globe-card-close').addEventListener('click', function () { ctx.globe.clear(); });
             node('globe-cities-open').addEventListener('click', openList);
+            window.addEventListener('hashchange', openFromHash);
+            openFromHash();
             node('globe-cities-close').addEventListener('click', closeList);
             node('globe-cities').addEventListener('click', function (event) {
                 if (event.target === node('globe-cities')) closeList();
