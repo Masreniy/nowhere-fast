@@ -3,9 +3,9 @@
 -- Структура была реконструирована по запросам в коде, а 16.09.2026 СВЕРЕНА
 -- с живой базой через MCP-коннектор Supabase. Совпало всё, кроме двух вещей:
 --
---   1. В базе есть четыре таблицы, которых здесь нет: users (с password_hash),
---      trips, trip_activities, trip_packing. Пустые, кодом не используются.
---      Разбор — в supabase/cleanup-legacy.sql.
+--   1. В базе были четыре таблицы, которых здесь нет: users (с password_hash),
+--      trips, trip_activities, trip_packing. Пустые, кодом не использовались,
+--      УДАЛЕНЫ 16.09.2026 — см. supabase/cleanup-legacy.sql.
 --   2. Поля и ограничения, объявленные ВНУТРИ create table if not exists для
 --      таблиц, которые уже существовали, в базу не попали: для созданной таблицы
 --      этот оператор не делает ничего. Они добавлены отдельным блоком в конце файла.
@@ -255,9 +255,21 @@ begin
     end if;
 end $$;
 
--- НЕ добавлено: unique (route_template_id, day_number).
--- Данные его нарушают — у маршрута «Гуанджоу за 3 дня: классика» каждый день
--- задвоен. Ограничение включается только после чистки, см. cleanup-legacy.sql.
+-- Уникальность дня внутри маршрута. Добавлена 16.09.2026, после того как из
+-- данных убрали задвоенный маршрут (cleanup-legacy.sql). Это страховка от
+-- повторения: раньше у маршрута «за 3 дня» было шесть дней вместо трёх.
+do $$
+begin
+    if not exists (
+        select 1 from pg_constraint
+        where conname = 'route_template_days_unique_number'
+          and conrelid = 'public.route_template_days'::regclass
+    ) then
+        alter table public.route_template_days
+            add constraint route_template_days_unique_number
+            unique (route_template_id, day_number);
+    end if;
+end $$;
 
 -- Фиксированный search_path: без него вызывающая роль может подменить схему
 -- поиска и увести вызовы функции в свои объекты.
@@ -274,14 +286,12 @@ end;
 $$;
 
 -- Координаты города лежали только в старых колонках coordinates_*, а код и схема
--- работают с lat/lng. Переносим значения, старые колонки не удаляем: их удаление
--- необратимо и решается отдельно.
-update public.cities
-   set lat = coordinates_lat,
-       lng = coordinates_lng
- where lat is null
-   and coordinates_lat is not null
-   and coordinates_lng is not null;
+-- работают с lat/lng. Значения перенесены 16.09.2026, сами колонки затем удалены
+-- (cleanup-legacy.sql), поэтому здесь остался только след решения: перенос
+-- выполнялся до удаления, а не после.
+--
+--   update public.cities set lat = coordinates_lat, lng = coordinates_lng
+--    where lat is null and coordinates_lat is not null;
 
 -- ---------------------------------------------------------------------------
 -- Что НЕ сделано здесь и почему
@@ -289,9 +299,11 @@ update public.cities
 --
 -- 1. Нет таблиц trips / trip_days / trip_items (поездка пользователя).
 --    Причина: аккаунты вне первой версии (ADR-0002). Появятся вместе с ними.
---    Уточнение от 16.09.2026: в базе при этом ЛЕЖАТ таблицы trips, trip_activities,
---    trip_packing и users — остатки прежнего подхода. Пустые, кодом не используются,
---    здесь не описаны сознательно: они не часть целевой модели. См. cleanup-legacy.sql.
+--    Уточнение от 16.09.2026: такие таблицы (trips, trip_activities, trip_packing
+--    и users) в базе лежали — остатки прежнего подхода. Пустые, кодом не
+--    использовались, удалены. См. cleanup-legacy.sql. В базе остались ровно пять
+--    таблиц этой схемы: cities, places, route_templates, route_template_days,
+--    route_template_activities.
 --
 -- 2. Нет PostGIS и геоиндекса по-настоящему.
 --    Причина: на объёмах первого города обычного индекса по (lat, lng) достаточно.
