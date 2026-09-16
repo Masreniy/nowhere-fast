@@ -76,8 +76,7 @@ html:has(.globe-page) { height: 100%; }
     inset: 0;
     width: 100%; height: 100%;
     display: block;
-    touch-action: none;
-    cursor: grab;
+    touch-action: none; cursor: grab;
 }
 
 #globe-scene:active { cursor: grabbing; }
@@ -106,42 +105,33 @@ html:has(.globe-page) { height: 100%; }
 }
 
 .globe-label--origin {
-    font-size: var(--g-xs);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    font-size: var(--g-xs); letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--mint);
 }
 
 .globe-label--target {
-    font-family: var(--display);
+    font-family: var(--display); font-weight: 400;
     font-size: var(--g-label);
-    font-weight: 400;
     color: var(--amber);
 }
 
 .globe-label--own {
-    font-size: var(--g-sm);
-    letter-spacing: 0.04em;
-    font-weight: 500;
+    font-size: var(--g-sm); letter-spacing: 0.04em; font-weight: 500;
     color: rgba(255, 233, 200, 0.95);
 }
 
 .globe-label--near {
-    font-size: var(--g-xs);
-    letter-spacing: 0.06em;
+    font-size: var(--g-xs); letter-spacing: 0.06em;
     color: rgba(226, 236, 248, 0.72);
 }
 
 .globe-label--sky {
-    font-size: var(--g-xs);
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
+    font-size: var(--g-xs); letter-spacing: 0.22em; text-transform: uppercase;
     color: rgba(255, 233, 196, 0.85);
 }
 
 .globe-label--star {
-    font-size: var(--g-xs);
-    letter-spacing: 0.14em;
+    font-size: var(--g-xs); letter-spacing: 0.14em;
     color: rgba(178, 202, 236, 0.5);
 }
 
@@ -157,22 +147,16 @@ html:has(.globe-page) { height: 100%; }
 .globe-pin {
     position: absolute;
     top: 0; left: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
+    display: inline-flex; align-items: center; gap: 7px;
     padding: 5px 12px 5px 8px;
     background: var(--glass);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 196, 107, 0.45);
-    border-radius: 999px;
+    border: 1px solid rgba(255, 196, 107, 0.45); border-radius: 999px;
     color: var(--ink);
-    font-family: var(--sans);
-    font-size: var(--g-sm);
-    letter-spacing: 0.04em;
+    font-family: var(--sans); font-size: var(--g-sm); letter-spacing: 0.04em;
     white-space: nowrap;
-    cursor: pointer;
-    pointer-events: auto;
+    cursor: pointer; pointer-events: auto;
     opacity: 0;
     transition: opacity 0.3s var(--ease), border-color 0.25s var(--ease);
 }
@@ -192,8 +176,7 @@ html:has(.globe-page) { height: 100%; }
     position: absolute;
     inset: 0;
     z-index: 4;
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
     gap: 16px;
     padding: clamp(18px, 2.6vw, 36px);
     pointer-events: none;
@@ -206,21 +189,11 @@ html:has(.globe-page) { height: 100%; }
 .globe-ui .globe-card,
 .globe-ui .globe-results { pointer-events: auto; }
 
-.globe-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 20px;
-}
+.globe-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
 
 /* --- Логотип ---------------------------------------------------------------- */
 
-.globe-brand {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    text-decoration: none;
-}
+.globe-brand { display: flex; align-items: baseline; gap: 10px; text-decoration: none; }
 
 .globe-brand__mark {
     width: 7px; height: 7px; flex: none;
@@ -244,26 +217,22 @@ html:has(.globe-page) { height: 100%; }
 .globe-tools {
     display: flex;
     align-items: center;
-    gap: 10px;
     flex-wrap: wrap;
     justify-content: flex-end;
+    gap: 10px;
 }
 
 .globe-control,
 .globe-page .lang-select {
+    padding: 9px 14px;
+    min-height: 0;
     background: var(--glass);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    border: 1px solid var(--line);
-    border-radius: 999px;
+    border: 1px solid var(--line); border-radius: 999px;
     color: var(--ink);
-    font-family: var(--sans);
-    font-size: var(--g-md);
-    font-weight: 400;
-    padding: 9px 14px;
-    min-height: 0;
-    outline: none;
-    cursor: pointer;
+    font-family: var(--sans); font-size: var(--g-md); font-weight: 400;
+    outline: none; cursor: pointer;
     transition: border-color 0.25s var(--ease), color 0.25s var(--ease);
 }
 
@@ -346,14 +315,11 @@ html:has(.globe-page) { height: 100%; }
     top: calc(100% + 8px);
     inset-inline: 0;
     z-index: 5;
+    max-height: 60vh; overflow-y: auto;
     background: var(--glass-solid);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    overflow: hidden;
-    overflow-y: auto;
-    max-height: 60vh;
+    border: 1px solid var(--line); border-radius: 14px;
 }
 
 .globe-result {
@@ -361,13 +327,11 @@ html:has(.globe-page) { height: 100%; }
     width: 100%;
     align-items: baseline;
     gap: 12px;
-    background: none;
-    border: 0;
+    padding: 9px 14px;
+    background: none; border: 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     color: var(--ink);
-    font-family: var(--sans);
-    font-size: var(--g-lg);
-    padding: 9px 14px;
+    font-family: var(--sans); font-size: var(--g-lg);
     text-align: start;
     cursor: pointer;
 }
@@ -398,9 +362,7 @@ html:has(.globe-page) { height: 100%; }
 /* --- Середина: заголовок и карточка ----------------------------------------- */
 
 .globe-middle {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between;
     gap: 28px;
     /* min-height: 0 обязателен: иначе карточка растягивает строку сетки
        и накрывает нижнюю панель, а на низком окне — и верхнюю тоже. */
@@ -410,11 +372,9 @@ html:has(.globe-page) { height: 100%; }
 .globe-hero {
     max-width: 24ch;
     pointer-events: none;
-    font-family: var(--display);
-    font-weight: 400;
+    font-family: var(--display); font-weight: 400;
     font-size: clamp(32px, 3.6vw, 54px);
-    line-height: 1.05;
-    letter-spacing: -0.015em;
+    line-height: 1.05; letter-spacing: -0.015em;
 }
 
 .globe-card {
@@ -447,27 +407,19 @@ html:has(.globe-page) { height: 100%; }
     pointer-events: none;
 }
 
-.globe-card__head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-}
+.globe-card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 
 .globe-card__ident { min-width: 0; }
 
 .globe-card__name {
-    font-family: var(--display);
-    font-weight: 400;
+    font-family: var(--display); font-weight: 400;
     font-size: var(--g-name);
     line-height: 1.1;
     word-break: break-word;
 }
 
 .globe-card__meta {
-    font-size: var(--g-xs);
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
+    font-size: var(--g-xs); letter-spacing: 0.16em; text-transform: uppercase;
     color: var(--ink-faint);
     margin-top: 5px;
 }
@@ -476,8 +428,7 @@ html:has(.globe-page) { height: 100%; }
     flex: none;
     width: 26px; height: 26px;
     background: none;
-    border: 1px solid var(--line);
-    border-radius: 50%;
+    border: 1px solid var(--line); border-radius: 50%;
     color: var(--ink-dim);
     font-size: 14px; line-height: 1;
     cursor: pointer;
@@ -501,9 +452,7 @@ html:has(.globe-page) { height: 100%; }
 .globe-stat__value { font-size: var(--g-md); font-variant-numeric: tabular-nums; text-align: end; }
 
 .globe-nearby__title {
-    font-size: var(--g-xs);
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
+    font-size: var(--g-xs); letter-spacing: 0.18em; text-transform: uppercase;
     color: var(--ink-faint);
     margin: 14px 0 6px;
 }
@@ -513,12 +462,10 @@ html:has(.globe-page) { height: 100%; }
     width: 100%;
     justify-content: space-between;
     gap: 10px;
-    background: none;
-    border: 0;
     padding: 6px 0;
+    background: none; border: 0;
     color: var(--ink-dim);
-    font-family: var(--sans);
-    font-size: var(--g-md);
+    font-family: var(--sans); font-size: var(--g-md);
     text-align: start;
     cursor: pointer;
 }
@@ -534,15 +481,11 @@ html:has(.globe-page) { height: 100%; }
     justify-content: center;
     width: 100%;
     padding: 11px;
-    border: 0;
-    border-radius: 999px;
+    border: 0; border-radius: 999px;
     background: var(--amber);
     color: #1a1204;
-    font-family: var(--sans);
-    font-size: var(--g-md);
-    font-weight: 500;
-    text-align: center;
-    text-decoration: none;
+    font-family: var(--sans); font-size: var(--g-md); font-weight: 500;
+    text-align: center; text-decoration: none;
     cursor: pointer;
 }
 
@@ -556,11 +499,7 @@ html:has(.globe-page) { height: 100%; }
     Честный отказ вместо ссылки: города нет в продукте — и мы это говорим,
     а не показываем кнопку в никуда (AC-003).
 */
-.globe-card__note {
-    font-size: var(--g-sm);
-    line-height: 1.5;
-    color: var(--ink-faint);
-}
+.globe-card__note { font-size: var(--g-sm); line-height: 1.5; color: var(--ink-faint); }
 
 /* --- Низ: точка отсчёта, время, подсказки, атрибуция ------------------------ */
 
@@ -569,18 +508,14 @@ html:has(.globe-page) { height: 100%; }
     перенос уводил их в левый нижний угол поверх подсказок.
 */
 .globe-bottom {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
+    display: flex; align-items: flex-end; justify-content: space-between;
     gap: 20px;
     flex-wrap: nowrap;
 }
 
 .globe-bottom__left {
-    display: flex;
-    flex-direction: column;
+    display: flex; flex-direction: column; align-items: flex-start;
     gap: 10px;
-    align-items: flex-start;
     /* Строке атрибуции нужна вся свободная ширина, иначе она ломается на три. */
     flex: 1 1 auto;
     min-width: 0;
@@ -590,14 +525,12 @@ html:has(.globe-page) { height: 100%; }
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    padding: 7px 13px;
     background: var(--glass);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 7px 13px;
-    font-family: var(--sans);
-    font-size: var(--g-sm);
+    border: 1px solid var(--line); border-radius: 999px;
+    font-family: var(--sans); font-size: var(--g-sm);
     color: var(--ink-dim);
     cursor: pointer;
 }
@@ -614,8 +547,8 @@ html:has(.globe-page) { height: 100%; }
 .globe-time {
     display: flex;
     align-items: center;
-    gap: 10px;
     flex-wrap: wrap;
+    gap: 10px;
     font-size: var(--g-xs);
     color: var(--ink-faint);
 }
@@ -648,11 +581,9 @@ html:has(.globe-page) { height: 100%; }
 .globe-time__value { color: var(--ink-dim); font-variant-numeric: tabular-nums; min-width: 9ch; }
 
 .globe-time__now {
-    background: none;
-    border: 0;
+    background: none; border: 0;
     color: var(--ink-faint);
-    font-family: var(--sans);
-    font-size: var(--g-xs);
+    font-family: var(--sans); font-size: var(--g-xs);
     text-decoration: underline;
     cursor: pointer;
 }
@@ -660,8 +591,8 @@ html:has(.globe-page) { height: 100%; }
 .globe-hints,
 .globe-credits {
     display: flex;
-    gap: 6px 14px;
     flex-wrap: wrap;
+    gap: 6px 14px;
     font-size: var(--g-xs);
     color: var(--ink-faint);
 }
@@ -674,14 +605,12 @@ html:has(.globe-page) { height: 100%; }
 .globe-meters {
     display: flex;
     flex: none;
-    gap: 18px;
     flex-wrap: wrap;
     align-items: flex-end;
     justify-content: flex-end;
+    gap: 18px;
     max-width: 46vw;
-    font-size: var(--g-xs);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    font-size: var(--g-xs); letter-spacing: 0.1em; text-transform: uppercase;
     color: var(--ink-faint);
     font-variant-numeric: tabular-nums;
 }
@@ -692,8 +621,7 @@ html:has(.globe-page) { height: 100%; }
     position: absolute;
     inset: 0;
     z-index: 12;
-    display: grid;
-    place-items: center;
+    display: grid; place-items: center;
     padding: clamp(18px, 2.6vw, 36px);
     background: rgba(2, 3, 8, 0.66);
     backdrop-filter: blur(6px);
@@ -703,41 +631,35 @@ html:has(.globe-page) { height: 100%; }
 .globe-sheet__box {
     width: min(460px, 100%);
     max-height: 100%; overflow-y: auto;
-    background: var(--glass-solid);
-    border: 1px solid var(--line);
-    border-radius: 20px;
     padding: 24px;
+    background: var(--glass-solid);
+    border: 1px solid var(--line); border-radius: 20px;
 }
 
-.globe-sheet__head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-}
+.globe-sheet__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 
 .globe-sheet__head h2 {
-    font-family: var(--display);
-    font-weight: 400;
+    font-family: var(--display); font-weight: 400;
     font-size: var(--g-name);
     line-height: 1.1;
 }
 
 .globe-sheet__lead {
     margin: 8px 0 16px;
-    font-size: var(--g-sm);
-    line-height: 1.6;
+    font-size: var(--g-sm); line-height: 1.6;
     color: var(--ink-faint);
 }
 
 .globe-city-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between;
     gap: 12px;
     padding: 12px 0;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
+
+/* Название со страной занимает всё, что осталось от кнопок,
+   иначе «КНР (Китайская Народная Республика)» сползает в столбик. */
+.globe-city-row > div:first-child { flex: 1 1 auto; min-width: 0; }
 
 .globe-city-row__name { font-size: var(--g-lg); }
 .globe-city-row__meta { font-size: var(--g-xs); color: var(--ink-faint); }
@@ -750,18 +672,14 @@ html:has(.globe-page) { height: 100%; }
     position: absolute;
     inset: 0;
     z-index: 10;
-    background: var(--void);
-    display: grid;
-    place-content: center;
-    justify-items: center;
+    display: grid; place-content: center; justify-items: center;
     gap: 16px;
+    background: var(--void);
     transition: opacity 0.9s var(--ease);
 }
 
 .globe-boot__word {
-    font-size: var(--g-xs);
-    letter-spacing: 0.4em;
-    text-transform: uppercase;
+    font-size: var(--g-xs); letter-spacing: 0.4em; text-transform: uppercase;
     color: var(--ink-faint);
 }
 
@@ -788,9 +706,7 @@ html:has(.globe-page) { height: 100%; }
     position: absolute;
     inset: 0;
     z-index: 90;
-    display: grid;
-    place-content: center;
-    justify-items: center;
+    display: grid; place-content: center; justify-items: center;
     gap: 14px;
     padding: 32px;
     text-align: center;
@@ -798,16 +714,14 @@ html:has(.globe-page) { height: 100%; }
 }
 
 .globe-fatal h2 {
-    font-family: var(--display);
-    font-weight: 400;
+    font-family: var(--display); font-weight: 400;
     font-size: var(--g-label);
     color: var(--ink);
 }
 
 .globe-fatal p {
     max-width: 46ch;
-    font-size: var(--g-lg);
-    line-height: 1.6;
+    font-size: var(--g-lg); line-height: 1.6;
     color: var(--ink-dim);
 }
 
