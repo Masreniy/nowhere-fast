@@ -7,7 +7,9 @@
 
 ## Текущее состояние
 
-- Тестов: **9** в `tests/dom.test.js` — экранирование данных
+- Тестов: **16** — `tests/dom.test.js` (9, экранирование данных)
+  и `tests/api.test.js` (7, слой доступа: подстановка `author_id`, черновик
+  по умолчанию, защита от знаков шаблона в `ilike`)
 - Запуск: `npm install && npm test` (node:test + jsdom)
 - CI: **есть с 16.09.2026** — `.github/workflows/test.yml` гоняет `npm test`
   на каждом pull request и на каждом push в `main`. Проверка называется `test`
