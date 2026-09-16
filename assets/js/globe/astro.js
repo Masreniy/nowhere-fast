@@ -159,9 +159,11 @@ NF.globeAstro = (function () {
         const v = Math.atan2(yv, xv);
         const r = Math.hypot(xv, yv);
 
-        const xh = r * (Math.cos(N) * Math.cos(v + w) - Math.sin(N) * Math.sin(v + w) * Math.cos(i));
-        const yh = r * (Math.sin(N) * Math.cos(v + w) + Math.cos(N) * Math.sin(v + w) * Math.cos(i));
-        const zh = r * (Math.sin(v + w) * Math.sin(i));
+        const cosVW = Math.cos(v + w);
+        const sinVW = Math.sin(v + w);
+        const xh = r * (Math.cos(N) * cosVW - Math.sin(N) * sinVW * Math.cos(i));
+        const yh = r * (Math.sin(N) * cosVW + Math.cos(N) * sinVW * Math.cos(i));
+        const zh = r * (sinVW * Math.sin(i));
 
         return {
             lon: Math.atan2(yh, xh),

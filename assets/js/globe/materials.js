@@ -221,7 +221,8 @@ NF.globeMaterials = (function () {
         '                   asin(clamp(n.y, -1.0, 1.0)) / 3.14159265 + 0.5);',
         '    vec3 surface = texture2D(uDay, uv).rgb;',
         '',
-        '    vec2 texel = vec2(1.0 / ' + SURFACE_W.toFixed(1) + ', 1.0 / ' + SURFACE_H.toFixed(1) + ');',
+        '    vec2 texel = vec2(1.0 / ' + SURFACE_W.toFixed(1)
+            + ', 1.0 / ' + SURFACE_H.toFixed(1) + ');',
         '    float h0 = texture2D(uSurface, uv).r;',
         '    float hR = texture2D(uSurface, uv + vec2(texel.x, 0.0)).r;',
         '    float hU = texture2D(uSurface, uv + vec2(0.0, texel.y)).r;',
@@ -243,7 +244,8 @@ NF.globeMaterials = (function () {
             'uniform float uLiftUnits;',
             'varying float vRadius;',
             'void main() {',
-            '    float t = clamp((vRadius - ' + radius.toFixed(1) + ') / max(0.5, uLiftUnits), 0.0, 1.0);',
+            '    float t = clamp((vRadius - ' + radius.toFixed(1)
+                + ') / max(0.5, uLiftUnits), 0.0, 1.0);',
             '    vec3 col = mix(vec3(0.04, 0.045, 0.06), uTop * 0.55, pow(t, 2.5));',
             '    // Полупрозрачная толща читается как срез земли,',
             '    // непрозрачная — как серая картонная плита.',

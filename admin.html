@@ -161,6 +161,17 @@
             </p>
             <div id="cities-list"></div>
         </div>
+
+        <div class="card">
+            <h2 data-i18n="admin.geoNames.title">🈯 Написания городов</h2>
+            <p class="admin-sub" data-i18n="admin.geoNames.note">
+                Справочник городов приходит латиницей. Написания на языках интерфейса
+                собираются слоями: широкий слой из Natural Earth заливается целиком,
+                точечный — медленно дозаполняется из OpenStreetMap для тех городов,
+                которые действительно понадобились.
+            </p>
+            <div id="geo-names-progress"></div>
+        </div>
     </section>
 
     <!-- ---------------------------------------------------------------- -->
@@ -470,6 +481,66 @@
             }
         }
 
+        // --- Написания городов: метка прогресса -----------------------------
+
+        /**
+         * Строка «метка: значение». Отдельной функцией, потому что таких
+         * строк шесть и собирать их по месту — это шесть шансов забыть
+         * про NF.dom и написать разметку строкой.
+         */
+        function fact(label, text) {
+            return dom.el('li', { text: label + ': ' + text });
+        }
+
+        /** «ru 3862 · en 3862 · …» в порядке переключателя языков. */
+        function perLanguageLine(perLanguage) {
+            const counts = perLanguage || {};
+            const parts = NF.i18n.LANGS
+                .filter(function (lang) { return counts[lang.code]; })
+                .map(function (lang) { return lang.code + ' ' + NF.i18n.n(counts[lang.code]); });
+            return parts.length > 0 ? parts.join(' · ') : '—';
+        }
+
+        /**
+         * Сколько городов уже с написаниями и сколько осталось.
+         *
+         * Дозаполнение идёт медленно и порциями, поэтому у владельца должна
+         * быть видимая точка, в которой сразу понятно, движется ли оно вообще.
+         */
+        async function loadGeoNames() {
+            const container = document.getElementById('geo-names-progress');
+            dom.loading(container, t('state.loading'));
+            try {
+                const progress = await NF.api.cityNamesProgress();
+                const total = Number((progress && progress.total) || 0);
+
+                if (total === 0) {
+                    dom.empty(container, t('admin.geoNames.empty'), null);
+                    return;
+                }
+
+                const withNames = Number(progress.with_names || 0);
+                const share = Math.round((withNames / total) * 100);
+                const checked = progress.last_checked_at;
+
+                dom.replace(container, dom.el('ul', { class: 'admin-sub' }, [
+                    fact(t('admin.geoNames.total'), NF.i18n.n(total)),
+                    fact(t('admin.geoNames.withNames'), NF.i18n.n(withNames) + ' (' + NF.i18n.n(share) + '%)'),
+                    fact(t('admin.geoNames.untried'), NF.i18n.n(Number(progress.untried || 0))),
+                    fact(t('admin.geoNames.emptyResult'), NF.i18n.n(Number(progress.empty_result || 0))),
+                    fact(
+                        t('admin.geoNames.lastChecked'),
+                        checked
+                            ? new Date(checked).toLocaleString(NF.i18n.lang())
+                            : t('admin.geoNames.never')
+                    ),
+                    fact(t('admin.geoNames.byLanguage'), perLanguageLine(progress.per_language)),
+                ]));
+            } catch (error) {
+                dom.failure(container, t('admin.geoNames.failure'), error);
+            }
+        }
+
         // --- Запуск --------------------------------------------------------
 
         document.getElementById('place-form').addEventListener('submit', addPlace);
@@ -521,6 +592,14 @@
             }
             loadPlaces();
             reflectSession();
+        });
+
+        // Метка прогресса подключается отдельно от reloadActiveTab(): она не
+        // вкладка, а сводка, и живёт своим циклом. Запрос дешёвый — одна строка
+        // из представления, — поэтому считается сразу, а не по открытию вкладки.
+        document.addEventListener('DOMContentLoaded', function () {
+            loadGeoNames();
+            NF.i18n.onChange(loadGeoNames);
         });
     })();
 </script>

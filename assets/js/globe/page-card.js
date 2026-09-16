@@ -46,11 +46,26 @@ NF.globeCard = (function () {
             const rows = [];
             if (city && city.population) rows.push(stat(t('globe.population'), NF.i18n.n(city.population)));
             if (country && Number.isFinite(country.land_share)) {
-                rows.push(stat(t('globe.share'), (country.land_share * 100).toFixed(2) + ' %'));
+                // land_share приходит из базы уже в процентах (см. комментарий
+                // к колонке в supabase/schema.sql). Второе умножение на сто
+                // давало Таиланду 35 % суши планеты вместо 0,35 %.
+                rows.push(stat(t('globe.share'), country.land_share.toFixed(2) + ' %'));
             }
             rows.push(stat(t('globe.localTime'), NF.origin.localTime(selection.lng, ctx.globe.date)));
             rows.push(stat(t('globe.center'), ctx.format.coord(selection.lat, selection.lng)));
             return distanceStats().concat(rows);
+        }
+
+        /**
+         * Строка «лететь». NF.origin отдаёт не голое число, а оценку с
+         * объяснением: правило проекта — вычисленное число надо уметь
+         * объяснить. Само объяснение живёт подсказкой рядом со значением.
+         */
+        function flightRow(km) {
+            const flight = NF.origin.flightMinutes(km);
+            const row = stat(t('globe.flight'), ctx.format.minutes(flight.minutes));
+            if (flight.explain) row.setAttribute('title', flight.explain);
+            return row;
         }
 
         function distanceStats() {
@@ -68,7 +83,7 @@ NF.globeCard = (function () {
 
             return [
                 stat(t('globe.distance'), ctx.format.km(km)),
-                stat(t('globe.flight'), ctx.format.minutes(NF.origin.flightMinutes(km))),
+                flightRow(km),
             ];
         }
 

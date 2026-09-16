@@ -251,6 +251,24 @@ NF.api = (function () {
         });
     }
 
+    // --- Справочник городов: написания на языках интерфейса ----------------
+
+    /**
+     * Сводка по дозаполнению написаний: сколько городов всего, у скольких
+     * есть написания, на скольких языках, сколько ещё не спрашивали.
+     *
+     * Считает представление в базе, а не браузер: иначе ради четырёх чисел
+     * пришлось бы выкачать девять тысяч строк справочника.
+     */
+    async function cityNamesProgress() {
+        const { data, error } = await client
+            .from('geo_city_names_progress')
+            .select('total, with_names, untried, empty_result, last_checked_at, per_language')
+            .maybeSingle();
+        if (error) fail(error);
+        return data;
+    }
+
     return {
         client: client,
         listCities: listCities,
@@ -261,5 +279,6 @@ NF.api = (function () {
         createPlace: createPlace,
         deletePlace: deletePlace,
         listRoutes: listRoutes,
+        cityNamesProgress: cityNamesProgress,
     };
 })();
