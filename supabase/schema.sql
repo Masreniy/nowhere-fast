@@ -116,6 +116,14 @@ create table if not exists public.places (
     author_id     uuid,
     is_published  boolean not null default false,
 
+    -- Ссылка на запись во внешнем источнике и дата последней сверки.
+    -- source говорит «откуда класс данных», а эти двое — «какая именно
+    -- запись у провайдера и когда её проверяли». Без них повторный импорт
+    -- задвоит места, а протухшие часы работы никто не заметит (ADR-0006).
+    external_source text,   -- 'osm' и т. п.; пусто — заведено вручную
+    external_id     text,   -- например way/255622888
+    checked_at      timestamptz,
+
     created_at    timestamptz not null default now(),
     updated_at    timestamptz not null default now(),
 
@@ -125,6 +133,11 @@ create table if not exists public.places (
     constraint places_price_range check (price_level is null or price_level between 0 and 4),
     constraint places_visit_positive check (visit_minutes is null or visit_minutes > 0)
 );
+
+-- Идемпотентность импорта: одна запись источника заводится ровно один раз.
+create unique index if not exists places_external_key
+    on public.places (external_source, external_id)
+    where external_source is not null and external_id is not null;
 
 create index if not exists places_city_idx      on public.places (city_id);
 create index if not exists places_published_idx on public.places (city_id, is_published);

@@ -514,6 +514,8 @@ img { max-width: 100%; }
 
 .site-footer .logo { color: #fff; font-size: 1.5rem; }
 .site-footer p { margin-top: 8px; font-size: 0.9rem; }
+.site-footer .attribution { font-size: 0.8rem; opacity: 0.75; }
+.site-footer .attribution a { text-decoration: underline; }
 
 /* --- Адаптив ------------------------------------------------------------ */
 
