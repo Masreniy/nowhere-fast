@@ -7,7 +7,12 @@
     <meta name="description" content="Глобус: где ты, что вокруг и куда имеет смысл лететь. Выбери город — и собери поездку по порядку." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+    <!--
+        Instrument Serif и Inter 300 добавлены к общей строке проекта, а не
+        подключены второй: это шрифты прототипа, на них держится вид сцены.
+        Запасные в списке выставлены так, чтобы без сети вид не разваливался.
+    -->
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
     <!--
         Порядок важен: globe.css подключается после app.css, берёт оттуда
         токены и гасит светлую тему внутри .globe-page. Глобальный :root
@@ -41,7 +46,7 @@
             <a href="globe.html" class="globe-brand">
                 <span class="globe-brand__mark" aria-hidden="true"></span>
                 <span>
-                    <span class="globe-brand__name">Nowhere<span>Fast</span></span>
+                    <span class="globe-brand__name">Nowhere Fast</span>
                     <span class="globe-brand__sub" data-i18n="globe.tagline">Планировщик путешествий</span>
                 </span>
             </a>
