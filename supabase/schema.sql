@@ -506,3 +506,102 @@ begin
 end $$;
 
 create index if not exists cities_country_code_idx on public.cities (country_code);
+
+-- ---------------------------------------------------------------------------
+-- Написания городов на языках интерфейса (аддитивно, 16.09.2026)
+--
+-- Справочник `geo_cities` приходит из GeoNames через пакет `all-the-cities`,
+-- а тот отдаёт ТОЛЬКО латиницу: поле altName пусто у всех 135 233 записей
+-- (проверено чтением пакета). Интерфейс проекта — на десяти языках, и при
+-- русском интерфейсе «Москва» в поиске не находится, находится «Moscow».
+-- ADR-0010 назвал это ограничением источника; здесь оно закрывается.
+--
+-- Написания лежат в jsonb рядом с городом, а не отдельной таблицей переводов:
+-- языков ровно десять, они меняются вместе с интерфейсом, и читаются всегда
+-- вместе с городом. Ровно то же решение и по той же причине принято выше
+-- для `countries.names`.
+--
+-- ТРИ СОСТОЯНИЯ, И ПОЧЕМУ ИМЕННО ТАК. Дозаполнение идёт медленно и порциями,
+-- поэтому «нет написаний» обязано отличаться от «спрашивали, источник молчит»:
+-- иначе дозаполнитель вечно ходит за одними и теми же городами.
+--
+--   names is null,     names_checked_at is null      — ещё не пробовали
+--   names is null,     names_checked_at is not null  — пробовали, источник не дал
+--   names is not null, names_checked_at — когда подтверждено
+--
+-- Почему не `names = '{}'` для «пробовали и пусто»: пустой объект неотличим
+-- от ошибки записи, и каждый читатель обязан помнить про `names <> '{}'`.
+-- Отсутствие данных — это null, а факт попытки несёт дата. Заодно это даёт
+-- повтор по давности (`names_checked_at < now() - interval '...'`) без
+-- четвёртой колонки-флага.
+--
+-- ИСТОЧНИК НАЗЫВАЕТСЯ В СТРОКЕ. `names_source` — не украшение: широкий слой
+-- (Natural Earth, public domain) и точечный (Nominatim/OSM, ODbL) имеют разные
+-- обязательства по атрибуции, и по ADR-0006 знать, откуда факт, обязаны мы,
+-- а не читатель NOTICE. Значения: 'natural-earth', 'nominatim'.
+-- ---------------------------------------------------------------------------
+
+alter table public.geo_cities add column if not exists names            jsonb;
+alter table public.geo_cities add column if not exists names_checked_at timestamptz;
+alter table public.geo_cities add column if not exists names_source     text;
+
+-- `add constraint if not exists` в Postgres нет, поэтому проверка вручную —
+-- как и выше по файлу для cities_country_code_fkey.
+do $$
+begin
+    if not exists (
+        select 1 from pg_constraint
+        where conname = 'geo_cities_names_is_object'
+          and conrelid = 'public.geo_cities'::regclass
+    ) then
+        alter table public.geo_cities
+            add constraint geo_cities_names_is_object
+            check (names is null or jsonb_typeof(names) = 'object');
+    end if;
+
+    -- Есть написания — обязана быть дата подтверждения и назван источник.
+    -- Без этого через месяц никто не скажет, откуда взялась строка, а по
+    -- ADR-0003 выдуманное написание неотличимо от подтверждённого только
+    -- до первой проверки.
+    if not exists (
+        select 1 from pg_constraint
+        where conname = 'geo_cities_names_dated'
+          and conrelid = 'public.geo_cities'::regclass
+    ) then
+        alter table public.geo_cities
+            add constraint geo_cities_names_dated
+            check (names is null or (names_checked_at is not null and names_source is not null));
+    end if;
+end $$;
+
+-- Частичный индекс ровно под очередь дозаполнителя: «ещё не пробовали,
+-- крупные вперёд». Обычный индекс по population здесь не помогает —
+-- отбор идёт по двум null-условиям, а их в индексе по населению нет.
+create index if not exists geo_cities_names_pending_idx
+    on public.geo_cities (population desc)
+    where names is null and names_checked_at is null;
+
+-- Сводка для метки прогресса в админке. Считать это в браузере нельзя:
+-- пришлось бы выкачать все девять тысяч строк ради четырёх чисел.
+-- security_invoker: представление обязано подчиняться RLS базовой таблицы,
+-- а не правам своего владельца — иначе оно становится дырой в обход политик.
+create or replace view public.geo_city_names_progress
+    with (security_invoker = true) as
+select
+    count(*)                                                                  as total,
+    count(*) filter (where names is not null)                                 as with_names,
+    count(*) filter (where names is null and names_checked_at is null)        as untried,
+    count(*) filter (where names is null and names_checked_at is not null)    as empty_result,
+    max(names_checked_at)                                                     as last_checked_at,
+    (
+        select coalesce(jsonb_object_agg(lang, n), '{}'::jsonb)
+        from (
+            select key as lang, count(*) as n
+            from public.geo_cities, lateral jsonb_object_keys(names) as key
+            where names is not null
+            group by key
+        ) as by_lang
+    )                                                                         as per_language
+from public.geo_cities;
+
+grant select on public.geo_city_names_progress to anon, authenticated;
