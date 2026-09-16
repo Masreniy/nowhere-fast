@@ -141,3 +141,9 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Сборка глобуса: зависимости и кэш растра стран (16 МБ) в репозиторий не едут.
+# Сами артефакты (assets/vendor/globe-engine.js, assets/img/globe/*.jpg,
+# assets/data/globe-stars.js) коммитятся — см. tools/globe/README.md.
+tools/globe/node_modules/
+tools/globe/.cache/

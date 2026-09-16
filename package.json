@@ -4,7 +4,10 @@
   "private": true,
   "description": "Планировщик путешествий. Статический сайт без сборки; npm используется только для тестов.",
   "scripts": {
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "build:globe-vendor": "node tools/globe/build-vendor.js",
+    "build:globe-textures": "node tools/globe/build-textures.js",
+    "build:globe-stars": "node tools/globe/build-stars.js"
   },
   "devDependencies": {
     "jsdom": "^30.0.1"
