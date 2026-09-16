@@ -40,8 +40,8 @@
 npm install && npm test
 ```
 
-Сейчас 9 тестов в `tests/dom.test.js` — проверяют экранирование данных, то есть
-защиту от возврата XSS.
+Сейчас 16 тестов: `tests/dom.test.js` проверяет экранирование данных (защиту
+от возврата XSS), `tests/api.test.js` — слой доступа к данным. Сети тестам не нужно.
 
 ## Структура
 
@@ -59,6 +59,7 @@ npm install && npm test
 | `supabase/policies.sql` | Политики RLS |
 | `supabase/cleanup-legacy.sql` | Что удалено из базы и почему |
 | `tests/dom.test.js` | Тесты экранирования |
+| `tests/api.test.js` | Тесты слоя доступа к данным |
 | `docs/PRODUCT-BRIEF.md` | Зачем продукт и для кого |
 | `docs/GLOSSARY.md` | Термины и колонка «что это НЕ» |
 | `docs/ACCEPTANCE-PLANNER.md` | Критерии приёмки первого среза планировщика |
