@@ -103,7 +103,13 @@ NF.globeLabels = (function () {
         // --- Группы подписей ---------------------------------------------
 
         function drawPins(view) {
+            const chosen = view.selection && view.selection.kind === 'city'
+                ? view.selection.index : null;
+
             view.pins.forEach(function (mark) {
+                // У выбранного города уже есть своя крупная подпись. Отметка
+                // рядом с ней читалась как два разных города с одним именем.
+                if (chosen !== null && mark.cityIndex === chosen) return;
                 const point = view.globe.projectSurface(mark.lat, mark.lng);
                 const node = pinLabel(mark);
                 place(node, freeSpot(point, GAP_PIN) ? point : null);

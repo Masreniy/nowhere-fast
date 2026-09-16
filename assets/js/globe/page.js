@@ -138,6 +138,7 @@ window.NF = window.NF || {};
             return {
                 key: mark.row.id,
                 title: mark.row.name,
+                cityIndex: mark.cityIndex,
                 lat: mark.lat,
                 lng: mark.lng,
                 hint: t('globe.inProduct'),
