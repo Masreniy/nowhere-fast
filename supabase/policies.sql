@@ -278,3 +278,36 @@ create policy route_template_activities_delete_own
 -- Проверка со стороны базы (pg_policies и линтер Supabase) сделана: отчёт
 -- по безопасности пуст. Проверка ИЗ БРАУЗЕРА не делалась — сеть рабочей среды
 -- до *.supabase.co закрыта политикой окружения. Пункты 1–3 ждут владельца.
+
+-- ---------------------------------------------------------------------------
+-- Справочник стран и городов (добавлено 16.09.2026)
+--
+-- Читают все и без входа: справочник нужен глобусу до того, как человек хоть
+-- что-то выбрал, и ничего личного в нём нет — это география, а не содержание
+-- сайта. Скрывать её не от кого.
+--
+-- Пишет никто. Справочник приходит из источников целиком и заменяется целиком
+-- через `tools/geo/build-reference-sql.js` и привилегированное подключение
+-- (интерфейс Supabase или MCP-коннектор). Правка одной страны руками из
+-- браузера расходится с источником молча — и это будет видно только как
+-- кривой контур на глобусе. Политик на insert/update/delete нет вовсе:
+-- при включённом RLS отсутствие политики означает запрет.
+--
+-- `force row level security` не ставится и здесь — по той же причине, что
+-- и у пяти таблиц выше: справочник заводится привилегированным подключением,
+-- и `force` закрыл бы единственную работающую дверь. Таблиц под RLS теперь
+-- семь, а не пять.
+-- ---------------------------------------------------------------------------
+
+alter table public.countries  enable row level security;
+alter table public.geo_cities enable row level security;
+
+drop policy if exists countries_read_all on public.countries;
+create policy countries_read_all
+    on public.countries for select
+    using (true);
+
+drop policy if exists geo_cities_read_all on public.geo_cities;
+create policy geo_cities_read_all
+    on public.geo_cities for select
+    using (true);

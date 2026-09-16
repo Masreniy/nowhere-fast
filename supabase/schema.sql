@@ -408,3 +408,101 @@ create unique index if not exists cities_name_country_key
 --
 --    Менять их в базе не стали: ограничение строже, чем было записано, и оно
 --    верное. Исправлено объявление выше по файлу.
+
+-- ---------------------------------------------------------------------------
+-- Справочник стран и городов (добавлено 16.09.2026)
+--
+-- ПОЧЕМУ ОТДЕЛЬНЫЕ ТАБЛИЦЫ, А НЕ СТРОКИ В `cities`
+--
+-- `cities` — продуктовая сущность: у города есть описание, картинка, валюта,
+-- виза, места (ADR-0004) и авторские маршруты. Таких городов будет десятки,
+-- и каждый заводится руками, потому что за ним стоит содержание.
+--
+-- `countries` и `geo_cities` — справочник-газеттир: 235 стран и 9045 городов
+-- от 50 тысяч жителей. Он нужен глобусу (что рисовать и где), поиску («откуда
+-- я лечу») и определению точки отсчёта по часовому поясу. Содержания за этими
+-- строками нет — только география.
+--
+-- Сложить их в одну таблицу значит: сломать смысл `cities` (в списке городов
+-- на главной окажется девять тысяч строк без единого места), сломать все
+-- существующие запросы (`listCities` отдаёт всё подряд без фильтра) и завести
+-- у города два разных жизненных цикла — «его завёл человек» и «его привёз
+-- импорт». Разделение стоит одной колонки-связки, и она ниже.
+--
+-- ИСТОЧНИКИ И ЛИЦЕНЗИИ перечислены в `supabase/seed-geo.sql`. Коротко:
+-- контуры — Natural Earth (public domain), имена стран — i18n-iso-countries
+-- (MIT), города — GeoNames через all-the-cities (CC BY 4.0, атрибуция
+-- обязательна). Данные собирает `tools/geo/build-reference-sql.js`.
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.countries (
+    -- ISO 3166-1 alpha-2. Спорные территории без кода (Косово, Сомалиленд,
+    -- Северный Кипр) в справочник не попадают: выдумывать им код нельзя.
+    code        text primary key,
+
+    -- Название на десяти языках интерфейса: {"ru":"Таиланд","en":"Thailand",...}.
+    -- Отдельной таблицей переводов это делать рано: языков ровно десять,
+    -- и они меняются вместе с интерфейсом, а не независимо от него.
+    names       jsonb not null,
+
+    -- Центр страны и её угловой размах в градусах. Оба считаются по сетке точек
+    -- суши, а не по прямоугольнику контура: у России и США прямоугольник даёт
+    -- центр в океане. spread нужен камере — на сколько отлетать, чтобы страна
+    -- поместилась в кадр.
+    lat         double precision not null,
+    lng         double precision not null,
+    spread      double precision not null,
+
+    -- Доля суши планеты в процентах. Считается по той же сетке.
+    land_share  double precision,
+
+    -- Контур страны: [полигон][кольцо][точка] = [lng, lat], как в GeoJSON
+    -- MultiPolygon, упрощённый по Дугласу-Пекеру до сотых долей градуса.
+    -- Первое кольцо полигона — внешнее, остальные — дырки (Лесото внутри ЮАР).
+    outline     jsonb,
+
+    constraint countries_lat_range check (lat between -90 and 90),
+    constraint countries_lng_range check (lng between -180 and 180),
+    constraint countries_spread_positive check (spread > 0)
+);
+
+create table if not exists public.geo_cities (
+    -- Идентификатор GeoNames. Ключ берётся у источника, а не генерируется:
+    -- иначе повторный импорт задваивает справочник.
+    geoname_id   integer primary key,
+    name         text not null,
+    country_code text not null references public.countries (code),
+    lat          double precision not null,
+    lng          double precision not null,
+    population   integer not null,
+
+    constraint geo_cities_lat_range check (lat between -90 and 90),
+    constraint geo_cities_lng_range check (lng between -180 and 180),
+    constraint geo_cities_population_positive check (population > 0)
+);
+
+-- Внешний ключ без индекса — это медленное удаление страны и замечание
+-- линтера Supabase. Второй индекс под основной запрос глобуса:
+-- «города от такого-то населения».
+create index if not exists geo_cities_country_idx on public.geo_cities (country_code);
+create index if not exists geo_cities_population_idx on public.geo_cities (population desc);
+
+-- Связка продуктового города со справочником: по ней глобус закрашивает
+-- страны, в которых у нас есть наполнение. Nullable намеренно — город можно
+-- завести до того, как разобрались, какой стране он принадлежит по ISO.
+alter table public.cities add column if not exists country_code text;
+
+do $$
+begin
+    if not exists (
+        select 1 from pg_constraint
+        where conname = 'cities_country_code_fkey'
+          and conrelid = 'public.cities'::regclass
+    ) then
+        alter table public.cities
+            add constraint cities_country_code_fkey
+            foreign key (country_code) references public.countries (code);
+    end if;
+end $$;
+
+create index if not exists cities_country_code_idx on public.cities (country_code);

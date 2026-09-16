@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nowhere Fast — Город</title>
+    <title data-i18n="page.city.title">Nowhere Fast — Город</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
@@ -14,16 +14,18 @@
 <header class="site-header">
     <div class="container header-inner">
         <a href="index.html" class="logo">Nowhere<span>Fast</span></a>
-        <nav class="nav" aria-label="Основная навигация">
-            <a href="index.html">Главная</a>
-            <a href="index.html#cities">Города</a>
+        <nav class="nav" data-i18n-attr="aria-label:nav.aria" aria-label="Основная навигация">
+            <a href="index.html" data-i18n="nav.home">Главная</a>
+            <a href="index.html#cities" data-i18n="nav.cities">Города</a>
         </nav>
+        <!-- Язык — свойство всего проекта, поэтому переключатель есть на каждой странице. -->
+        <div id="lang-switcher"></div>
     </div>
 </header>
 
 <main>
     <div class="container city-hero">
-        <a href="index.html" class="btn-back">← Назад к городам</a>
+        <a href="index.html" class="btn-back" data-i18n="city.back">← Назад к городам</a>
         <div id="city-content"></div>
     </div>
 
@@ -33,23 +35,23 @@
     -->
     <section class="section trip-section">
         <div class="container">
-            <h2 class="section-title" style="text-align:left">🧳 Моя поездка</h2>
-            <p class="section-sub" style="text-align:left">
+            <h2 class="section-title" style="text-align:left" data-i18n="trip.title">🧳 Моя поездка</h2>
+            <p class="section-sub" style="text-align:left" data-i18n="trip.sub">
                 Даты и точка старта. Ничего никуда не отправляется — поездка живёт
                 в адресе страницы, поэтому ссылкой можно поделиться
             </p>
 
             <div class="trip-form">
                 <div class="form-field">
-                    <label for="trip-from">С какого числа</label>
+                    <label for="trip-from" data-i18n="trip.from">С какого числа</label>
                     <input id="trip-from" type="date" />
                 </div>
                 <div class="form-field">
-                    <label for="trip-to">По какое</label>
+                    <label for="trip-to" data-i18n="trip.to">По какое</label>
                     <input id="trip-to" type="date" />
                 </div>
                 <div class="form-field form-field-wide">
-                    <label for="trip-start">Откуда начинаю день</label>
+                    <label for="trip-start" data-i18n="trip.start">Откуда начинаю день</label>
                     <select id="trip-start"></select>
                 </div>
             </div>
@@ -59,8 +61,8 @@
 
     <section class="section">
         <div class="container">
-            <h2 class="section-title" style="text-align:left">📍 Места</h2>
-            <p class="section-sub" style="text-align:left">
+            <h2 class="section-title" style="text-align:left" data-i18n="places.title">📍 Места</h2>
+            <p class="section-sub" style="text-align:left" data-i18n="places.sub">
                 Отметь то, куда точно хочешь. Остальное планировщик предложит сам —
                 если оно окажется по пути
             </p>
@@ -77,8 +79,8 @@
                 Не удалены — судьба решается владельцем (ADR-0007).
             -->
             <details class="routes-details">
-                <summary>🗺️ Готовые маршруты от авторов</summary>
-                <p class="section-sub" style="text-align:left">
+                <summary data-i18n="routes.summary">🗺️ Готовые маршруты от авторов</summary>
+                <p class="section-sub" style="text-align:left" data-i18n="routes.sub">
                     Чужие подборки без дат и без твоего отеля. Планировщик их не использует
                 </p>
                 <div id="routes-container"></div>
@@ -88,12 +90,14 @@
 </main>
 
 <!-- Нижняя панель появляется, как только что-то отмечено. -->
-<div id="trip-bar" class="trip-bar hidden" role="region" aria-label="Собранная поездка">
+<div id="trip-bar" class="trip-bar hidden" role="region"
+     data-i18n-attr="aria-label:trip.barAria" aria-label="Собранная поездка">
     <div class="container trip-bar-inner">
         <span id="trip-bar-count" class="trip-bar-count"></span>
         <div class="trip-bar-actions">
-            <button type="button" id="trip-clear" class="btn btn-secondary btn-small">Сбросить</button>
-            <a id="trip-go" class="btn btn-primary btn-small" href="#">Собрать план →</a>
+            <button type="button" id="trip-clear" class="btn btn-secondary btn-small"
+                    data-i18n="trip.clear">Сбросить</button>
+            <a id="trip-go" class="btn btn-primary btn-small" href="#"></a>
         </div>
     </div>
 </div>
@@ -101,14 +105,16 @@
 <footer class="site-footer">
     <div class="container">
         <div class="logo">Nowhere<span>Fast</span></div>
-        <p>&copy; 2026 Сделано для путешественников.</p>
+        <p data-i18n="footer.copyright">&copy; 2026 Сделано для путешественников.</p>
         <!--
             Атрибуция обязательна по лицензии ODbL: данные о местах взяты
             из OpenStreetMap. Убирать нельзя — это условие использования.
+            Название лицензии не переводится — это имя собственное.
         -->
         <p class="attribution">
-            Данные о местах — <a href="https://www.openstreetmap.org/copyright"
-            rel="noopener">© участники OpenStreetMap</a>, ODbL
+            <span data-i18n="footer.data">Данные о местах — </span><a
+            href="https://www.openstreetmap.org/copyright" rel="noopener"
+            data-i18n="footer.osm">© участники OpenStreetMap</a>, ODbL
         </p>
     </div>
 </footer>
@@ -117,6 +123,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0"></script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/dom.js"></script>
+<script src="assets/js/i18n-strings.js"></script>
+<script src="assets/js/i18n.js"></script>
 <script src="assets/js/api.js"></script>
 <script src="assets/js/dates.js"></script>
 <script src="assets/js/trip.js"></script>
@@ -125,20 +133,43 @@
         'use strict';
 
         const dom = NF.dom;
+        const t = NF.i18n.t;
         const params = new URLSearchParams(window.location.search);
 
-        /** Поездка и загруженные места — единственное состояние этой страницы. */
+        /** Поездка и загруженные данные — всё состояние этой страницы. */
         let trip = NF.trip.resolve(window.location.search);
-        let places = [];
+        let city = null;
+        let places = null;
+        let routes = null;
         let startOptions = [];
 
+        /** Подпись сложности переводится, класс — нет: он про цвет, а не про слова. */
         const DIFFICULTY = {
-            easy: { label: '🟢 Лёгкий', css: 'badge-easy' },
-            medium: { label: '🟡 Средний', css: 'badge-medium' },
-            hard: { label: '🔴 Сложный', css: 'badge-hard' },
+            easy: { key: 'difficulty.easy', css: 'badge-easy' },
+            medium: { key: 'difficulty.medium', css: 'badge-medium' },
+            hard: { key: 'difficulty.hard', css: 'badge-hard' },
         };
 
-        const PRICE = ['Бесплатно', '₽', '₽₽', '₽₽₽', '₽₽₽₽'];
+        /** Уровень цены. Нулевой переводится словом, остальные — значки валюты. */
+        const PRICE = [null, '₽', '₽₽', '₽₽₽', '₽₽₽₽'];
+
+        /**
+         * Чего не хватает поездке, словами.
+         *
+         * NF.trip.missing() отдаёт русские строки: модуль поездки ничего не знает
+         * про язык интерфейса и знать не должен — он про состояние, а не про показ.
+         * Перевод делается здесь, на границе показа.
+         */
+        const GAP_KEYS = {
+            'даты поездки': 'gap.dates',
+            'хотя бы одно отмеченное место': 'gap.places',
+        };
+
+        function gapsText() {
+            return NF.trip.missing(trip).map(function (gap) {
+                return GAP_KEYS[gap] ? t(GAP_KEYS[gap]) : gap;
+            });
+        }
 
         /**
          * Находит город по адресу страницы.
@@ -160,35 +191,35 @@
             return null;
         }
 
-        function cityMeta(city) {
+        function cityMeta(item) {
             const fields = [
-                ['Валюта', city.currency],
-                ['Язык', city.language],
-                ['Часовой пояс', city.timezone],
-                ['Виза', city.visa_info],
+                ['city.meta.currency', item.currency],
+                ['city.meta.language', item.language],
+                ['city.meta.timezone', item.timezone],
+                ['city.meta.visa', item.visa_info],
             ].filter(function (pair) { return dom.value(pair[1], '') !== ''; });
 
             if (fields.length === 0) return null;
 
             return dom.el('div', { class: 'city-meta' }, fields.map(function (pair) {
                 return dom.el('div', { class: 'city-meta-item' }, [
-                    dom.el('span', { class: 'label', text: pair[0] }),
+                    dom.el('span', { class: 'label', text: t(pair[0]) }),
                     dom.el('span', { class: 'value', text: pair[1] }),
                 ]);
             }));
         }
 
-        function renderCity(city) {
+        function renderCity() {
             const container = document.getElementById('city-content');
 
-            document.title = city.name + ' — Nowhere Fast';
+            document.title = t('city.docTitle', { city: city.name });
 
             dom.replace(container, [
                 dom.el('h1', { text: city.name }),
                 city.name_local ? dom.el('div', { class: 'name-local', text: city.name_local }) : null,
-                dom.el('div', { class: 'country', text: dom.value(city.country, '📍 Страна не указана') }),
+                dom.el('div', { class: 'country', text: dom.value(city.country, t('city.noCountry')) }),
                 dom.image(city.image_url, city.name),
-                dom.el('p', { class: 'description', text: dom.value(city.description, 'Описание пока не добавлено') }),
+                dom.el('p', { class: 'description', text: dom.value(city.description, t('city.noDescription')) }),
                 cityMeta(city),
             ]);
         }
@@ -208,8 +239,8 @@
             const value = dom.el('span', { class: 'address-text', text: '📍 ' + text });
             const button = dom.el('button', {
                 class: 'copy-btn',
-                text: 'Копировать',
-                attrs: { type: 'button', title: 'Скопировать адрес — его показывают таксисту' },
+                text: t('place.copy'),
+                attrs: { type: 'button', title: t('place.copyTitle') },
             });
             button.addEventListener('click', function () { copyAddress(button, value, text); });
 
@@ -225,7 +256,7 @@
         function copyAddress(button, valueNode, text) {
             const done = function (message) {
                 button.textContent = message;
-                window.setTimeout(function () { button.textContent = 'Копировать'; }, 2000);
+                window.setTimeout(function () { button.textContent = t('place.copy'); }, 2000);
             };
             const selectInstead = function () {
                 try {
@@ -234,16 +265,16 @@
                     const selection = window.getSelection();
                     selection.removeAllRanges();
                     selection.addRange(range);
-                    done('Выделено — скопируй');
+                    done(t('place.selected'));
                 } catch (error) {
                     console.error('Не удалось ни скопировать, ни выделить адрес:', error);
-                    done('Не вышло');
+                    done(t('place.copyFailed'));
                 }
             };
 
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(text).then(
-                    function () { done('Скопировано'); },
+                    function () { done(t('place.copied')); },
                     selectInstead
                 );
                 return;
@@ -251,18 +282,25 @@
             selectInstead();
         }
 
-        function placeCard(place) {
+        function placeChips(place) {
             const meta = [];
             if (place.category) meta.push(dom.el('span', { class: 'chip', text: place.category }));
             if (place.visit_minutes) {
-                meta.push(dom.el('span', { class: 'chip', text: '⏱ ' + place.visit_minutes + ' мин' }));
+                meta.push(dom.el('span', {
+                    class: 'chip', text: '⏱ ' + t('unit.minutes', { n: place.visit_minutes }),
+                }));
             }
             if (place.price_level !== null && place.price_level !== undefined) {
                 // Прочерк, а не пустой чип: значение вне словаря — это неизвестность,
                 // и показать её честнее, чем нарисовать пустое место.
-                meta.push(dom.el('span', { class: 'chip', text: PRICE[place.price_level] || '—' }));
+                const level = place.price_level === 0 ? t('place.free') : PRICE[place.price_level];
+                meta.push(dom.el('span', { class: 'chip', text: level || '—' }));
             }
+            return meta;
+        }
 
+        function placeCard(place) {
+            const meta = placeChips(place);
             const picked = NF.trip.isSelected(trip, place.id);
             const checkbox = dom.el('input', {
                 class: 'place-pick',
@@ -274,7 +312,7 @@
                 dom.el('div', { class: 'place-pick-row' }, [
                     checkbox,
                     dom.el('label', {
-                        class: 'place-pick-label', text: 'Хочу сюда',
+                        class: 'place-pick-label', text: t('place.pick'),
                         attrs: { for: 'pick-' + place.id },
                     }),
                 ]),
@@ -299,24 +337,30 @@
             return card;
         }
 
+        function renderPlaces() {
+            const container = document.getElementById('places-container');
+            if (places === null) return;
+
+            if (places.length === 0) {
+                // Админка писать не может: политики RLS разрешают запись только
+                // вошедшему автору, а входа в проекте ещё нет (ADR-0005).
+                dom.empty(container, t('places.emptyTitle'), t('places.emptyText'));
+                return;
+            }
+
+            dom.replace(container, dom.el('div', { class: 'places-grid' }, places.map(placeCard)));
+        }
+
         async function loadPlaces(cityId) {
             const container = document.getElementById('places-container');
-            dom.loading(container, 'Загружаем места…');
+            dom.loading(container, t('places.loading'));
 
             try {
                 places = await NF.api.listPlaces(cityId);
-
-                if (places.length === 0) {
-                    // Админка писать не может: политики RLS разрешают запись только
-                    // вошедшему автору, а входа в проекте ещё нет (ADR-0005).
-                    dom.empty(container, 'Мест пока нет',
-                        'Места заводятся через интерфейс Supabase — с координатами и местным написанием.');
-                    return;
-                }
-
-                dom.replace(container, dom.el('div', { class: 'places-grid' }, places.map(placeCard)));
+                renderPlaces();
             } catch (error) {
-                dom.failure(container, 'Не удалось загрузить места этого города.', error);
+                places = null;
+                dom.failure(container, t('places.failure'), error);
             }
         }
 
@@ -331,14 +375,15 @@
             return dom.el('div', { class: 'activity-item' }, [
                 dom.el('span', { class: 'order', text: activity.order_in_day + '.' }),
                 dom.el('div', { class: 'info' }, [
-                    dom.el('div', { class: 'name', text: dom.value(name, 'Без названия') }),
+                    dom.el('div', { class: 'name', text: dom.value(name, t('route.noName')) }),
                     local ? dom.el('div', { class: 'local', text: local }) : null,
                     activity.description ? dom.el('div', { class: 'desc', text: activity.description }) : null,
                     address ? dom.el('div', { class: 'location', text: '📍 ' + address }) : null,
                     // duration_minutes лежит в базе у всех активностей с самого начала
                     // и до 16.09.2026 не читался ни одним запросом.
                     activity.duration_minutes
-                        ? dom.el('div', { class: 'duration', text: '⏱ ' + activity.duration_minutes + ' мин' })
+                        ? dom.el('div', { class: 'duration',
+                            text: '⏱ ' + t('unit.minutes', { n: activity.duration_minutes }) })
                         : null,
                 ]),
             ]);
@@ -346,11 +391,12 @@
 
         function routeDay(day) {
             const activities = day.route_template_activities || [];
+            const title = day.name
+                ? t('route.dayNamed', { n: day.day_number, name: day.name })
+                : t('route.day', { n: day.day_number });
+
             return dom.el('div', { class: 'route-day' }, [
-                dom.el('div', {
-                    class: 'day-title',
-                    text: 'День ' + day.day_number + (day.name ? ': ' + day.name : ''),
-                }),
+                dom.el('div', { class: 'day-title', text: title }),
                 day.description ? dom.el('div', { class: 'day-desc', text: day.description }) : null,
                 dom.el('div', {}, activities.map(activityItem)),
             ]);
@@ -361,8 +407,8 @@
             const days = route.route_template_days || [];
 
             const badgeText = route.days_count
-                ? difficulty.label + ' · ' + route.days_count + ' дн.'
-                : difficulty.label;
+                ? t(difficulty.key) + ' · ' + t('route.daysShort', { n: route.days_count })
+                : t(difficulty.key);
 
             return dom.el('article', { class: 'route-card' }, [
                 dom.el('div', { class: 'route-header' }, [
@@ -374,22 +420,28 @@
             ]);
         }
 
+        function renderRoutes() {
+            const container = document.getElementById('routes-container');
+            if (routes === null) return;
+
+            if (routes.length === 0) {
+                dom.empty(container, t('routes.emptyTitle'), t('routes.emptyText'));
+                return;
+            }
+
+            dom.replace(container, routes.map(routeCard));
+        }
+
         async function loadRoutes(cityId) {
             const container = document.getElementById('routes-container');
-            dom.loading(container, 'Загружаем авторские маршруты…');
+            dom.loading(container, t('routes.loading'));
 
             try {
-                const routes = await NF.api.listRoutes(cityId);
-
-                if (routes.length === 0) {
-                    dom.empty(container, 'Авторских маршрутов пока нет',
-                        'Свой план можно собрать из мест выше — отметь их и задай даты.');
-                    return;
-                }
-
-                dom.replace(container, routes.map(routeCard));
+                routes = await NF.api.listRoutes(cityId);
+                renderRoutes();
             } catch (error) {
-                dom.failure(container, 'Не удалось загрузить авторские маршруты этого города.', error);
+                routes = null;
+                dom.failure(container, t('routes.failure'), error);
             }
         }
 
@@ -421,15 +473,14 @@
             bar.classList.toggle('hidden', count === 0);
             if (count === 0) return;
 
-            const word = count === 1 ? 'место' : (count < 5 ? 'места' : 'мест');
             document.getElementById('trip-bar-count').textContent =
-                'Отмечено ' + count + ' ' + word;
+                t('trip.marked', { n: count });
 
-            const gaps = NF.trip.missing(trip);
+            const gaps = gapsText();
             const link = document.getElementById('trip-go');
             link.setAttribute('href', 'plan.html?' + NF.trip.toQuery(trip));
             link.classList.toggle('btn-disabled', gaps.length > 0);
-            link.textContent = gaps.length > 0 ? 'Сначала выбери даты' : 'Собрать план →';
+            link.textContent = gaps.length > 0 ? t('trip.needDates') : t('trip.go');
         }
 
         /** Сколько дней получилось и чего ещё не хватает — словами. */
@@ -439,40 +490,47 @@
 
             if (trip.from && trip.to) {
                 const days = NF.dates.tripDays(trip.from, trip.to);
-                const word = days === 1 ? 'день' : (days < 5 ? 'дня' : 'дней');
                 parts.push(NF.dates.formatHuman(trip.from) + ' — ' +
-                           NF.dates.formatHuman(trip.to) + ', ' + days + ' ' + word);
+                           NF.dates.formatHuman(trip.to) + ', ' + t('unit.days', { n: days }));
             }
 
-            const gaps = NF.trip.missing(trip);
-            if (gaps.length) parts.push('Не хватает: ' + gaps.join(', '));
+            const gaps = gapsText();
+            if (gaps.length) parts.push(t('trip.gaps', { list: gaps.join(', ') }));
 
-            dom.replace(box, dom.el('p', { text: parts.join(' · ') || 'Заполни даты' }));
+            dom.replace(box, dom.el('p', { text: parts.join(' · ') || t('trip.fillDates') }));
         }
 
         /**
          * Откуда начинается день. Отеля в данных нет, поэтому предлагаем центр
          * города и любое из мест — этого хватает, чтобы расчёт был осмысленным.
+         *
+         * Центр помечен полем isCenter, а не сравнением названия со строкой:
+         * название теперь переводится, и сравнение с «Центр города» ломалось бы
+         * на любом языке, кроме русского.
          */
-        function fillStartOptions(city) {
+        function fillStartOptions() {
             const select = document.getElementById('trip-start');
             startOptions = [];
 
             if (Number.isFinite(city.lat) && Number.isFinite(city.lng)) {
-                startOptions.push({ lat: city.lat, lng: city.lng, name: 'Центр города' });
+                startOptions.push({ lat: city.lat, lng: city.lng, name: t('trip.startCenter'), isCenter: true });
             }
-            places.forEach(function (place) {
+            (places || []).forEach(function (place) {
                 startOptions.push({ lat: place.lat, lng: place.lng, name: place.name });
             });
 
             dom.clear(select);
-            select.append(dom.el('option', { attrs: { value: '' }, text: '— не указано —' }));
+            select.append(dom.el('option', { attrs: { value: '' }, text: t('trip.startNone') }));
             startOptions.forEach(function (option, index) {
                 select.append(dom.el('option', {
                     attrs: { value: String(index) }, text: option.name,
                 }));
             });
 
+            selectCurrentStart(select);
+        }
+
+        function selectCurrentStart(select) {
             const current = startOptions.findIndex(function (option) {
                 return trip.start && Math.abs(option.lat - trip.start.lat) < 1e-6 &&
                        Math.abs(option.lng - trip.start.lng) < 1e-6;
@@ -480,7 +538,10 @@
 
             if (current !== -1) {
                 select.value = String(current);
-            } else if (!trip.start && startOptions.length && startOptions[0].name === 'Центр города') {
+                return;
+            }
+
+            if (!trip.start && startOptions.length && startOptions[0].isCenter) {
                 // Допущение A5: если человек ничего не выбрал, старт — центр города.
                 // Раньше центр был просто первым пунктом списка, а выбранным
                 // оставалось «не указано» — и расчёт честно ругался на отсутствие
@@ -488,15 +549,10 @@
                 select.value = '0';
                 trip = Object.assign({}, trip, { start: startOptions[0] });
                 persist();
-            } else {
-                select.value = '';
+                return;
             }
 
-            select.addEventListener('change', function () {
-                const chosen = startOptions[Number(select.value)];
-                trip = Object.assign({}, trip, { start: chosen || null });
-                persist();
-            });
+            select.value = '';
         }
 
         function bindTripFields() {
@@ -516,6 +572,15 @@
                 });
             });
 
+            // Обработчик выбора старта вешается ровно один раз: сам список
+            // пересобирается при каждой смене языка, и подписка внутри сборки
+            // множилась бы с каждым переключением.
+            document.getElementById('trip-start').addEventListener('change', function () {
+                const chosen = startOptions[Number(this.value)];
+                trip = Object.assign({}, trip, { start: chosen || null });
+                persist();
+            });
+
             document.getElementById('trip-clear').addEventListener('click', function () {
                 trip = NF.trip.empty(trip.cityId);
                 NF.trip.forget(trip.cityId);
@@ -523,35 +588,49 @@
                 to.value = '';
                 document.getElementById('trip-start').value = '';
                 persist();
-                loadPlaces(trip.cityId);
+                renderPlaces();
             });
         }
 
         // --- Запуск --------------------------------------------------------
 
-        async function init() {
-            const cityContainer = document.getElementById('city-content');
-            dom.loading(cityContainer, 'Загружаем город…');
+        /** Смена языка перерисовывает уже загруженное, не ходя в сеть заново. */
+        function renderAll() {
+            if (city) {
+                renderCity();
+                fillStartOptions();
+            }
+            renderPlaces();
+            renderRoutes();
+            renderTripBar();
+            renderTripSummary();
+        }
 
-            let city;
+        async function init() {
+            NF.i18n.apply(document);
+            NF.i18n.mountSwitcher(document.getElementById('lang-switcher'));
+            NF.i18n.onChange(renderAll);
+
+            const cityContainer = document.getElementById('city-content');
+            dom.loading(cityContainer, t('city.loading'));
+
             try {
                 city = await resolveCity();
             } catch (error) {
-                dom.failure(cityContainer, 'Не удалось загрузить город.', error);
+                dom.failure(cityContainer, t('city.failure'), error);
                 return;
             }
 
             if (!city) {
                 // Название из адреса не подставляется в разметку как есть —
                 // оно приходит от кого угодно и раньше давало отражённую XSS.
-                dom.empty(cityContainer, '😕 Город не найден',
-                    'Проверь ссылку или выбери город на главной.');
-                dom.empty(document.getElementById('places-container'), 'Мест нет', null);
-                dom.empty(document.getElementById('routes-container'), 'Авторских маршрутов нет', null);
+                dom.empty(cityContainer, t('city.notFoundTitle'), t('city.notFoundText'));
+                dom.empty(document.getElementById('places-container'), t('places.noneShort'), null);
+                dom.empty(document.getElementById('routes-container'), t('routes.noneShort'), null);
                 return;
             }
 
-            renderCity(city);
+            renderCity();
 
             // Ссылка могла быть старой, по имени города, — тогда идентификатора
             // в ней нет, а поездке он нужен, чтобы её запомнить.
@@ -564,7 +643,7 @@
             // Маршруты авторов независимы от мест: одно не должно ждать другого.
             loadRoutes(city.id);
             await loadPlaces(city.id);
-            fillStartOptions(city);
+            fillStartOptions();
         }
 
         document.addEventListener('DOMContentLoaded', init);
