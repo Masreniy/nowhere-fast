@@ -33,6 +33,13 @@ NF.i18nStrings = {
 
     // --- Общее: шапка, подвал, переключатель --------------------------------
 
+    // Состояния, которые рисует dom.js сам, без участия страницы. Заголовок
+    // ошибки был единственным местом, где русский текст доживал до чужого
+    // языка: страница переводила сообщение, а шапку над ним — нет.
+    'state.loading': { ru: 'Загружаем…', en: 'Loading…', zh: '加载中…', es: 'Cargando…', ar: '...جارٍ التحميل', hi: 'लोड हो रहा है…', pt: 'Carregando…', fr: 'Chargement…', de: 'Wird geladen…', ja: '読み込み中…' },
+    'state.failureTitle': { ru: '⚠️ Не удалось загрузить', en: '⚠️ Could not load', zh: '⚠️ 加载失败', es: '⚠️ No se pudo cargar', ar: '⚠️ تعذّر التحميل', hi: '⚠️ लोड नहीं हो सका', pt: '⚠️ Não foi possível carregar', fr: '⚠️ Échec du chargement', de: '⚠️ Laden fehlgeschlagen', ja: '⚠️ 読み込めませんでした' },
+    'state.failureText': { ru: 'Попробуй обновить страницу.', en: 'Try refreshing the page.', zh: '请尝试刷新页面。', es: 'Prueba a actualizar la página.', ar: 'جرّب تحديث الصفحة.', hi: 'पेज रीफ़्रेश करके देखें।', pt: 'Tente atualizar a página.', fr: 'Essaie de rafraîchir la page.', de: 'Versuche die Seite neu zu laden.', ja: 'ページを再読み込みしてみてください。' },
+
     'lang.label': { ru: 'Язык', en: 'Language', zh: '语言', es: 'Idioma', ar: 'اللغة', hi: 'भाषा', pt: 'Idioma', fr: 'Langue', de: 'Sprache', ja: '言語' },
     'nav.aria': { ru: 'Основная навигация', en: 'Main navigation', zh: '主导航', es: 'Navegación principal', ar: 'التنقل الرئيسي', hi: 'मुख्य नेविगेशन', pt: 'Navegação principal', fr: 'Navigation principale', de: 'Hauptnavigation', ja: 'メインナビゲーション' },
     'nav.home': { ru: 'Главная', en: 'Home', zh: '首页', es: 'Inicio', ar: 'الرئيسية', hi: 'मुख्य पृष्ठ', pt: 'Início', fr: 'Accueil', de: 'Start', ja: 'ホーム' },

@@ -167,10 +167,29 @@ NF.dom = (function () {
 
     // --- Состояния экрана -------------------------------------------------
 
+    /**
+     * Строка интерфейса с запасным вариантом.
+     *
+     * dom.js не зависит от слоя языка жёстко: он подключается раньше и обязан
+     * работать сам по себе — в том числе в тестах, где i18n не загружен вовсе.
+     * Поэтому русский текст остаётся здесь запасным вариантом, а перевод
+     * берётся, только если слой языка есть и ключ в нём нашёлся.
+     *
+     * NF.i18n.t() на отсутствующий ключ возвращает сам ключ — сравнение
+     * с ключом и отличает «перевода нет» от «перевод есть».
+     */
+    function say(key, fallback) {
+        if (window.NF && NF.i18n && typeof NF.i18n.t === 'function') {
+            const text = NF.i18n.t(key);
+            if (text && text !== key) return text;
+        }
+        return fallback;
+    }
+
     function loading(container, message) {
         replace(container, el('div', { class: 'state' }, [
             el('div', { class: 'spinner' }),
-            el('p', { text: message || 'Загружаем…' }),
+            el('p', { text: message || say('state.loading', 'Загружаем…') }),
         ]));
     }
 
@@ -191,8 +210,8 @@ NF.dom = (function () {
     function failure(container, userMessage, error) {
         if (error) console.error('Nowhere Fast:', error);
         replace(container, el('div', { class: 'state state-error' }, [
-            el('h3', { text: '⚠️ Не удалось загрузить' }),
-            el('p', { text: userMessage || 'Попробуй обновить страницу.' }),
+            el('h3', { text: say('state.failureTitle', '⚠️ Не удалось загрузить') }),
+            el('p', { text: userMessage || say('state.failureText', 'Попробуй обновить страницу.') }),
         ]));
     }
 
