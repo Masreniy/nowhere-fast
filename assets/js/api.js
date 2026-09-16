@@ -260,6 +260,57 @@ NF.api = (function () {
      * Считает представление в базе, а не браузер: иначе ради четырёх чисел
      * пришлось бы выкачать девять тысяч строк справочника.
      */
+    /**
+     * Справочник стран целиком: глобусу нужны все сразу, иначе нечего рисовать.
+     *
+     * Контур приходит полем `outline` — координаты MultiPolygon. Он тяжёлый,
+     * но без него не нарисовать ни границы, ни подъём выбранной страны.
+     */
+    async function listCountries() {
+        const { data, error } = await client
+            .from('countries')
+            .select('code, names, lat, lng, spread, land_share, outline')
+            .order('code');
+        if (error) fail(error);
+        return data || [];
+    }
+
+    /**
+     * Справочник городов от заданного числа жителей.
+     *
+     * Порог — параметр, а не константа: глобусу нужны крупные, поиску нужны
+     * все. Поле `names` держит написания на языках интерфейса и заполнено
+     * не у всех — у остальных остаётся латинское `name` (ADR-0010).
+     */
+    async function listGeoCities(minPopulation) {
+        const floor = Number(minPopulation) > 0 ? Number(minPopulation) : 0;
+        const { data, error } = await client
+            .from('geo_cities')
+            .select('geoname_id, name, names, country_code, lat, lng, population')
+            .gte('population', floor)
+            .order('population', { ascending: false });
+        if (error) fail(error);
+        return data || [];
+    }
+
+    /**
+     * Города, у которых в продукте есть содержание.
+     *
+     * Их глобус отмечает на шаре и ведёт с них на city.html. Города без
+     * координат отбрасываются здесь, а не на странице: поставить на шар
+     * их всё равно некуда, а лишняя проверка в двух местах разъезжается.
+     */
+    async function listCitiesWithContent() {
+        const { data, error } = await client
+            .from('cities')
+            .select('id, name, name_local, country, country_code, lat, lng')
+            .not('lat', 'is', null)
+            .not('lng', 'is', null)
+            .order('name');
+        if (error) fail(error);
+        return data || [];
+    }
+
     async function cityNamesProgress() {
         const { data, error } = await client
             .from('geo_city_names_progress')
@@ -280,5 +331,8 @@ NF.api = (function () {
         deletePlace: deletePlace,
         listRoutes: listRoutes,
         cityNamesProgress: cityNamesProgress,
+        listCountries: listCountries,
+        listGeoCities: listGeoCities,
+        listCitiesWithContent: listCitiesWithContent,
     };
 })();

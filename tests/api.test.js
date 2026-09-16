@@ -53,7 +53,7 @@ function setup(options) {
         createClient: function () {
             function from(table) {
                 const builder = {};
-                ['select', 'order', 'limit', 'ilike', 'eq', 'in', 'insert', 'delete']
+                ['select', 'order', 'limit', 'ilike', 'eq', 'in', 'insert', 'delete', 'gte', 'not']
                     .forEach(function (method) {
                         builder[method] = function () {
                             calls.push({ table: table, method: method, args: Array.from(arguments) });
@@ -191,4 +191,77 @@ test('currentUserId различает вход и его отсутствие',
 
     const user = setup({ session: { user: { id: 'user-42' } } });
     assert.strictEqual(await user.win.NF.api.currentUserId(), 'user-42');
+});
+
+// --- Справочник стран и городов ----------------------------------------------
+//
+// Эти три функции однажды отсутствовали в api.js целиком, а страница их звала.
+// Ручная проверка в браузере ошибку НЕ поймала: слой данных там подменялся
+// заглушкой, и заглушка сама подставляла недостающие функции — проверка
+// проверяла себя, а не продукт. Нашло только чтение кода на ревью.
+//
+// Отсюда первая ось: имена, которые зовёт страница, и имена, которые отдаёт
+// слой данных, должны сходиться, и расхождение обязано ломать тесты, а не
+// страницу у человека.
+
+test('страница глобуса зовёт только то, что слой данных отдаёт', () => {
+    const api = setup().win.NF.api;
+    const source = ['page.js', 'page-data.js', 'page-search.js', 'page-card.js',
+        'page-tools.js', 'page-labels.js']
+        .map(function (name) {
+            return fs.readFileSync(path.join(ROOT, 'assets/js/globe', name), 'utf8');
+        })
+        .join('\n');
+
+    const called = [];
+    const pattern = /NF\.api\.([a-zA-Z0-9_]+)/g;
+    let found = pattern.exec(source);
+    while (found) {
+        if (called.indexOf(found[1]) === -1) called.push(found[1]);
+        found = pattern.exec(source);
+    }
+
+    assert.ok(called.length > 0,
+        'страница не обращается к слою данных — проверка потеряла смысл');
+    called.forEach(function (name) {
+        assert.strictEqual(typeof api[name], 'function',
+            'страница зовёт NF.api.' + name + ', а слой данных такого не отдаёт');
+    });
+});
+
+test('справочник стран просит контур — без него нечего рисовать', async () => {
+    const { win, calls } = setup();
+    await win.NF.api.listCountries();
+    const select = calls.find(function (c) { return c.method === 'select'; });
+    assert.strictEqual(select.table, 'countries', 'запрошена не та таблица');
+    assert.ok(/outline/.test(select.args[0]), 'контур не запрошен: ' + select.args[0]);
+    assert.ok(/names/.test(select.args[0]), 'названия на языках не запрошены');
+});
+
+test('справочник городов отбирает по населению и просит написания', async () => {
+    const { win, calls } = setup();
+    await win.NF.api.listGeoCities(50000);
+    const select = calls.find(function (c) { return c.method === 'select'; });
+    const gte = calls.find(function (c) { return c.method === 'gte'; });
+    assert.strictEqual(select.table, 'geo_cities', 'запрошена не та таблица');
+    assert.ok(/names/.test(select.args[0]), 'написания не запрошены: ' + select.args[0]);
+    assert.deepStrictEqual(gte.args, ['population', 50000], 'порог населения не применён');
+});
+
+test('отрицательный порог населения не уходит в запрос как есть', async () => {
+    const { win, calls } = setup();
+    await win.NF.api.listGeoCities(-1);
+    const gte = calls.find(function (c) { return c.method === 'gte'; });
+    assert.deepStrictEqual(gte.args, ['population', 0], 'мусорный порог не приведён к нулю');
+});
+
+test('города продукта без координат не приезжают — ставить их на шар некуда', async () => {
+    const { win, calls } = setup();
+    await win.NF.api.listCitiesWithContent();
+    const select = calls.find(function (c) { return c.method === 'select'; });
+    const nulls = calls.filter(function (c) { return c.method === 'not'; })
+        .map(function (c) { return c.args[0]; });
+    assert.strictEqual(select.table, 'cities', 'запрошена не та таблица');
+    assert.ok(/country_code/.test(select.args[0]), 'связка со справочником не запрошена');
+    assert.deepStrictEqual(nulls, ['lat', 'lng'], 'города без координат не отсеяны');
 });
