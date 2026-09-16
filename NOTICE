@@ -55,3 +55,56 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+================================================================================
+Страница глобуса: библиотеки
+================================================================================
+
+Собраны в один файл assets/vendor/globe-engine.js (см. ADR-0008 и
+tools/globe/README.md). Исходники сборки — tools/globe/.
+
+  three            0.186.0   MIT   https://github.com/mrdoob/three.js
+  three-globe      2.45.2    MIT   https://github.com/vasturiano/three-globe
+  three-geojson-geometry
+                   2.1.1     MIT   https://github.com/vasturiano/three-geojson-geometry
+
+Вместе с three-globe в сборку попадают его зависимости: d3-*, kapsule,
+tween.js, earcut, three-conic-polygon-geometry, index-array-by, accessor-fn,
+data-bind-mapper, frame-ticker, tinycolor2 — все под MIT или ISC.
+
+================================================================================
+Страница глобуса: данные
+================================================================================
+
+Снимок поверхности, ночные огни и карта рельефа
+  Источник:  NASA Visible Earth, Blue Marble Next Generation
+             (через three-globe/example/img)
+  Лицензия:  общественное достояние; NASA просит указывать источник
+  Где лежит: assets/img/globe/earth.jpg, assets/img/globe/surface.jpg
+
+Очертания и коды стран
+  Источник:  Natural Earth (через пакет world-atlas)
+  Лицензия:  общественное достояние
+  Где лежит: таблица countries в Supabase
+
+Названия стран на десяти языках
+  Источник:  i18n-iso-countries
+  Лицензия:  MIT
+  Где лежит: таблица countries в Supabase
+
+Справочник городов
+  Источник:  GeoNames (через пакет all-the-cities)
+  Лицензия:  CC BY 4.0 — АТРИБУЦИЯ ОБЯЗАТЕЛЬНА
+  Где лежит: таблица geo_cities в Supabase
+  Обязательство: указание источника выведено в подвале публичных страниц
+                 и удалению не подлежит. См. ADR-0010 и критерий AC-009.
+
+Каталог звёзд и линии созвездий
+  Источник:  d3-celestial (данные Yale Bright Star Catalog, Stellarium)
+  Лицензия:  BSD-3-Clause
+  Где лежит: assets/data/globe-stars.js
+
+Места в городах
+  Источник:  OpenStreetMap
+  Лицензия:  ODbL — АТРИБУЦИЯ ОБЯЗАТЕЛЬНА
+  Обязательство: «© участники OpenStreetMap» в подвале. См. ADR-0006.
