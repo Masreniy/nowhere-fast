@@ -16,15 +16,21 @@
 
     <!--
         Предупреждение показывается намеренно и не убирается «чтобы не мешало».
-        Пока политики из supabase/policies.sql не применены, любой посетитель
-        сайта может добавить или удалить данные из консоли браузера — скрытая
-        ссылка на эту страницу защитой не является.
+
+        До 16.09.2026 здесь было написано ровно обратное: «пока не применён
+        policies.sql, добавить или удалить данные может любой». Это оказалось
+        неправдой в обе стороны. Политики применены (ADR-0005), записи нет
+        ни у кого, а форма ниже не срабатывает — и об этом текст молчал.
     -->
-    <div class="notice">
-        <strong>Записи не защищены</strong>
-        Аутентификации нет. Пока не применён <code>supabase/policies.sql</code>,
-        добавить или удалить данные может любой, кто откроет консоль браузера.
-        Скрытая ссылка на админку — не защита.
+    <div class="notice" id="write-notice">
+        <strong>Запись ограничена политиками RLS</strong>
+        С 16.09.2026 добавлять, править и удалять может только вошедший автор
+        своих записей (ADR-0005). Без входа форма ниже не сработает ни у кого,
+        включая владельца, — тогда данные заводятся через интерфейс Supabase
+        или MCP-коннектор.
+        Подробности — <code>docs/adr/0005-apply-rls-before-auth.md</code>
+        и <code>supabase/policies.sql</code>.
+        <span id="session-state"></span>
     </div>
 
     <div class="tabs" role="tablist">
@@ -150,7 +156,8 @@
     </section>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Версия зафиксирована: плавающий «@2» однажды приедет с ломающей правкой. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0"></script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/dom.js"></script>
 <script src="assets/js/api.js"></script>
@@ -373,7 +380,9 @@
                 loadPlaces();
             } catch (error) {
                 console.error('Не удалось добавить место:', error);
-                message(box, 'Не удалось добавить место. Подробности в консоли браузера.', true);
+                message(box, error && error.code === 'NO_SESSION'
+                    ? 'Запись закрыта: нужен вход. Заводи место через интерфейс Supabase.'
+                    : 'Не удалось добавить место. Подробности в консоли браузера.', true);
             } finally {
                 button.disabled = false;
             }
@@ -423,6 +432,33 @@
         document.getElementById('place-form').addEventListener('submit', addPlace);
         document.getElementById('places-filter-city').addEventListener('change', loadPlaces);
 
+        /**
+         * Показывает состояние входа и выключает кнопку, если писать нельзя.
+         *
+         * Кнопка, которая заведомо вернёт отказ, — это обман интерфейса:
+         * человек заполняет форму и узнаёт о невозможности в самом конце.
+         */
+        async function reflectSession() {
+            let userId = null;
+            try {
+                userId = await NF.api.currentUserId();
+            } catch (error) {
+                console.error('Не удалось определить сессию:', error);
+            }
+
+            const state = document.getElementById('session-state');
+            const submit = document.querySelector('#place-form button[type="submit"]');
+
+            if (userId) {
+                state.textContent = 'Сейчас: вход выполнен, запись своих записей разрешена.';
+                return;
+            }
+
+            state.textContent = 'Сейчас: входа нет, поэтому кнопка добавления выключена.';
+            submit.disabled = true;
+            submit.setAttribute('title', 'Запись закрыта до появления входа');
+        }
+
         document.addEventListener('DOMContentLoaded', async function () {
             try {
                 await loadCityOptions();
@@ -430,6 +466,7 @@
                 console.error('Не удалось загрузить список городов:', error);
             }
             loadPlaces();
+            reflectSession();
         });
     })();
 </script>

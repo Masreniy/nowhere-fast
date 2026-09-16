@@ -77,7 +77,8 @@
     </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Версия зафиксирована: плавающий «@2» однажды приедет с ломающей правкой. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0"></script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/dom.js"></script>
 <script src="assets/js/api.js"></script>
@@ -116,8 +117,10 @@
                 const cities = await NF.api.listCities();
 
                 if (cities.length === 0) {
+                    // Раньше здесь звали в админку. Она не заводит города вообще,
+                    // а запись в базу закрыта политиками до появления входа.
                     dom.empty(container, '😕 Городов пока нет',
-                        'Добавь первый город через админку.');
+                        'Города заводятся через интерфейс Supabase — вход в проекте ещё не сделан.');
                     return;
                 }
 
