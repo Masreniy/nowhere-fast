@@ -65,24 +65,15 @@ NF.globe = (function () {
     const NORTH_MS = 700;
     const ORIGIN_FIT = 0.7;
 
-    function clamp(value, low, high) {
-        return Math.max(low, Math.min(high, value));
-    }
+    const clamp = NF.geo.clamp;
 
     /**
-     * Расстояние по дуге большого круга, км.
+     * Расстояние по дуге между двумя произвольными точками, км.
      *
-     * NF.origin.distanceKm считает только от точки отсчёта, а здесь нужна
-     * мера между двумя произвольными точками — «какие города рядом с этой».
+     * NF.origin.distanceKm считает только от точки отсчёта, а здесь нужно
+     * «какие города рядом вот с этим». Формула общая — NF.geo.
      */
-    function kmBetween(aLat, aLng, bLat, bLng) {
-        const dLat = (bLat - aLat) * DEG;
-        const dLng = (bLng - aLng) * DEG;
-        const h = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-            + Math.cos(aLat * DEG) * Math.cos(bLat * DEG)
-            * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-        return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(h)));
-    }
+    const kmBetween = NF.geo.haversineKm;
 
     /**
      * Указатель городов по ячейкам.

@@ -31,6 +31,9 @@ const path = require('node:path');
 const { JSDOM } = require('jsdom');
 
 const ROOT = path.join(__dirname, '..');
+// Общий помощник геометрии. Модуль от него зависит, поэтому в стенде
+// он загружается первым — как и на странице.
+const GEO_SOURCE = fs.readFileSync(path.join(ROOT, 'assets/js/geo.js'), 'utf8');
 const SOURCE = fs.readFileSync(path.join(ROOT, 'assets/js/origin.js'), 'utf8');
 
 /**
@@ -66,6 +69,7 @@ function setup(options) {
         win.navigator.geolocation = opts.geolocation;
     }
 
+    win.eval(GEO_SOURCE);
     win.eval(SOURCE);
     if (opts.gazetteer !== false) win.NF.origin.useGazetteer(CITIES);
     return win;
@@ -73,6 +77,7 @@ function setup(options) {
 
 /** Повторный заход на страницу: тот же браузер, тот же localStorage. */
 function reload(win) {
+    win.eval(GEO_SOURCE);
     win.eval(SOURCE);
     win.NF.origin.useGazetteer(CITIES);
     return win.NF.origin;

@@ -442,23 +442,9 @@ NF.origin = (function () {
 
     // --- Расстояние, перелёт, местное время --------------------------------
 
-    /**
-     * Расстояние по дуге большого круга, км. Формула гаверсинуса.
-     *
-     * Осознанная копия: та же формула живёт в NF.planner.haversineKm, но
-     * наружу оттуда не отдана, а origin.js подключается и без планировщика.
-     * Проверена независимо на парах через линию перемены дат — совпадение
-     * до километра (tests/origin.test.js). Третья копия в проекте означает,
-     * что пора заводить общий помощник, а не копировать снова.
-     */
+    /** Расстояние по дуге большого круга, км. Общий помощник — NF.geo. */
     function haversineKm(aLat, aLng, bLat, bLng) {
-        const rad = Math.PI / 180;
-        const dLat = (bLat - aLat) * rad;
-        const dLng = (bLng - aLng) * rad;
-        const h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(aLat * rad) * Math.cos(bLat * rad) *
-            Math.sin(dLng / 2) * Math.sin(dLng / 2);
-        return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(h)));
+        return NF.geo.haversineKm(aLat, aLng, bLat, bLng);
     }
 
     /** Расстояние от точки отсчёта. Точки нет или координаты негодные — null. */
