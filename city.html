@@ -27,12 +27,42 @@
         <div id="city-content"></div>
     </div>
 
+    <!--
+        Панель поездки. До 16.09.2026 её здесь не было вовсе: лендинг обещал
+        «выбери город и даты», а задать даты было негде. См. ADR-0007.
+    -->
+    <section class="section trip-section">
+        <div class="container">
+            <h2 class="section-title" style="text-align:left">🧳 Моя поездка</h2>
+            <p class="section-sub" style="text-align:left">
+                Даты и точка старта. Ничего никуда не отправляется — поездка живёт
+                в адресе страницы, поэтому ссылкой можно поделиться
+            </p>
+
+            <div class="trip-form">
+                <div class="form-field">
+                    <label for="trip-from">С какого числа</label>
+                    <input id="trip-from" type="date" />
+                </div>
+                <div class="form-field">
+                    <label for="trip-to">По какое</label>
+                    <input id="trip-to" type="date" />
+                </div>
+                <div class="form-field form-field-wide">
+                    <label for="trip-start">Откуда начинаю день</label>
+                    <select id="trip-start"></select>
+                </div>
+            </div>
+            <div id="trip-summary" class="trip-summary" role="status" aria-live="polite"></div>
+        </div>
+    </section>
+
     <section class="section">
         <div class="container">
             <h2 class="section-title" style="text-align:left">📍 Места</h2>
             <p class="section-sub" style="text-align:left">
-                У каждого места есть координаты и местное написание — то, что понимают
-                навигатор и таксист
+                Отметь то, куда точно хочешь. Остальное планировщик предложит сам —
+                если оно окажется по пути
             </p>
             <div id="places-container"></div>
         </div>
@@ -40,12 +70,33 @@
 
     <section class="section section-alt">
         <div class="container">
-            <h2 class="section-title" style="text-align:left">🗺️ Готовые маршруты</h2>
-            <p class="section-sub" style="text-align:left">Маршруты, собранные авторами</p>
-            <div id="routes-container"></div>
+            <!--
+                Авторские маршруты свёрнуты намеренно. Это контент из модели
+                «умный блог», которую ADR-0002 отверг как первую версию; их
+                активности не связаны с местами и в планировании не участвуют.
+                Не удалены — судьба решается владельцем (ADR-0007).
+            -->
+            <details class="routes-details">
+                <summary>🗺️ Готовые маршруты от авторов</summary>
+                <p class="section-sub" style="text-align:left">
+                    Чужие подборки без дат и без твоего отеля. Планировщик их не использует
+                </p>
+                <div id="routes-container"></div>
+            </details>
         </div>
     </section>
 </main>
+
+<!-- Нижняя панель появляется, как только что-то отмечено. -->
+<div id="trip-bar" class="trip-bar hidden" role="region" aria-label="Собранная поездка">
+    <div class="container trip-bar-inner">
+        <span id="trip-bar-count" class="trip-bar-count"></span>
+        <div class="trip-bar-actions">
+            <button type="button" id="trip-clear" class="btn btn-secondary btn-small">Сбросить</button>
+            <a id="trip-go" class="btn btn-primary btn-small" href="#">Собрать план →</a>
+        </div>
+    </div>
+</div>
 
 <footer class="site-footer">
     <div class="container">
@@ -67,12 +118,19 @@
 <script src="assets/js/config.js"></script>
 <script src="assets/js/dom.js"></script>
 <script src="assets/js/api.js"></script>
+<script src="assets/js/dates.js"></script>
+<script src="assets/js/trip.js"></script>
 <script>
     (function () {
         'use strict';
 
         const dom = NF.dom;
         const params = new URLSearchParams(window.location.search);
+
+        /** Поездка и загруженные места — единственное состояние этой страницы. */
+        let trip = NF.trip.resolve(window.location.search);
+        let places = [];
+        let startOptions = [];
 
         const DIFFICULTY = {
             easy: { label: '🟢 Лёгкий', css: 'badge-easy' },
@@ -137,6 +195,62 @@
 
         // --- Места ---------------------------------------------------------
 
+        /**
+         * Адрес и кнопка «копировать».
+         *
+         * Копируется МЕСТНОЕ написание: именно его показывают таксисту,
+         * латиницу навигатор в Китае может не найти (ADR-0004).
+         */
+        function addressRow(place) {
+            const text = place.address_local || place.address;
+            if (!text) return null;
+
+            const value = dom.el('span', { class: 'address-text', text: '📍 ' + text });
+            const button = dom.el('button', {
+                class: 'copy-btn',
+                text: 'Копировать',
+                attrs: { type: 'button', title: 'Скопировать адрес — его показывают таксисту' },
+            });
+            button.addEventListener('click', function () { copyAddress(button, value, text); });
+
+            return dom.el('div', { class: 'address' }, [value, button]);
+        }
+
+        /**
+         * Буфер обмена браузер отдаёт только по защищённому соединению.
+         * Если страницу открыли файлом с диска, его нет вовсе — тогда выделяем
+         * адрес целиком, чтобы человек скопировал сам. Молча ничего не делать
+         * нельзя: кнопка, которая иногда не работает, хуже её отсутствия.
+         */
+        function copyAddress(button, valueNode, text) {
+            const done = function (message) {
+                button.textContent = message;
+                window.setTimeout(function () { button.textContent = 'Копировать'; }, 2000);
+            };
+            const selectInstead = function () {
+                try {
+                    const range = document.createRange();
+                    range.selectNodeContents(valueNode);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    done('Выделено — скопируй');
+                } catch (error) {
+                    console.error('Не удалось ни скопировать, ни выделить адрес:', error);
+                    done('Не вышло');
+                }
+            };
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(
+                    function () { done('Скопировано'); },
+                    selectInstead
+                );
+                return;
+            }
+            selectInstead();
+        }
+
         function placeCard(place) {
             const meta = [];
             if (place.category) meta.push(dom.el('span', { class: 'chip', text: place.category }));
@@ -149,16 +263,40 @@
                 meta.push(dom.el('span', { class: 'chip', text: PRICE[place.price_level] || '—' }));
             }
 
-            return dom.el('div', { class: 'place-card' }, [
+            const picked = NF.trip.isSelected(trip, place.id);
+            const checkbox = dom.el('input', {
+                class: 'place-pick',
+                attrs: { type: 'checkbox', id: 'pick-' + place.id },
+            });
+            checkbox.checked = picked;
+
+            const card = dom.el('div', { class: 'place-card' + (picked ? ' place-card-picked' : '') }, [
+                dom.el('div', { class: 'place-pick-row' }, [
+                    checkbox,
+                    dom.el('label', {
+                        class: 'place-pick-label', text: 'Хочу сюда',
+                        attrs: { for: 'pick-' + place.id },
+                    }),
+                ]),
                 dom.el('h3', { text: place.name }),
                 // Местное написание показывается заметно: латиницу навигатор может не найти.
                 place.name_local ? dom.el('div', { class: 'local', text: place.name_local }) : null,
                 place.description ? dom.el('div', { class: 'desc', text: place.description }) : null,
-                place.address_local
-                    ? dom.el('div', { class: 'address', text: '📍 ' + place.address_local })
-                    : (place.address ? dom.el('div', { class: 'address', text: '📍 ' + place.address }) : null),
+                addressRow(place),
                 meta.length > 0 ? dom.el('div', { class: 'place-meta' }, meta) : null,
             ]);
+
+            checkbox.addEventListener('change', function () {
+                trip = NF.trip.toggle(trip, place.id);
+                // Предел отметок мог не дать поставить галочку — сверяемся с состоянием,
+                // а не с тем, что показал браузер.
+                const now = NF.trip.isSelected(trip, place.id);
+                checkbox.checked = now;
+                card.classList.toggle('place-card-picked', now);
+                persist();
+            });
+
+            return card;
         }
 
         async function loadPlaces(cityId) {
@@ -166,7 +304,7 @@
             dom.loading(container, 'Загружаем места…');
 
             try {
-                const places = await NF.api.listPlaces(cityId);
+                places = await NF.api.listPlaces(cityId);
 
                 if (places.length === 0) {
                     // Админка писать не может: политики RLS разрешают запись только
@@ -182,7 +320,7 @@
             }
         }
 
-        // --- Маршруты ------------------------------------------------------
+        // --- Авторские маршруты --------------------------------------------
 
         function activityItem(activity) {
             const place = activity.places;
@@ -238,21 +376,155 @@
 
         async function loadRoutes(cityId) {
             const container = document.getElementById('routes-container');
-            dom.loading(container, 'Загружаем маршруты…');
+            dom.loading(container, 'Загружаем авторские маршруты…');
 
             try {
                 const routes = await NF.api.listRoutes(cityId);
 
                 if (routes.length === 0) {
-                    dom.empty(container, 'Готовых маршрутов пока нет',
-                        'Маршрут можно собрать самому из мест выше.');
+                    dom.empty(container, 'Авторских маршрутов пока нет',
+                        'Свой план можно собрать из мест выше — отметь их и задай даты.');
                     return;
                 }
 
                 dom.replace(container, routes.map(routeCard));
             } catch (error) {
-                dom.failure(container, 'Не удалось загрузить маршруты этого города.', error);
+                dom.failure(container, 'Не удалось загрузить авторские маршруты этого города.', error);
             }
+        }
+
+        // --- Поездка -------------------------------------------------------
+
+        /**
+         * Записывает поездку в адрес и в память браузера и обновляет панель.
+         *
+         * Адрес правится через replaceState: каждая галочка не должна плодить
+         * запись в истории, иначе кнопка «назад» будет двадцать раз снимать
+         * отметки вместо возврата на предыдущую страницу.
+         */
+        function persist() {
+            const query = NF.trip.toQuery(trip);
+            try {
+                window.history.replaceState(null, '', query ? '?' + query : window.location.pathname);
+            } catch (error) {
+                // file:// не даёт менять адрес. Это не повод ломать страницу.
+                console.warn('Адрес не обновляется:', error.message);
+            }
+            NF.trip.save(trip);
+            renderTripBar();
+            renderTripSummary();
+        }
+
+        function renderTripBar() {
+            const bar = document.getElementById('trip-bar');
+            const count = trip.selected.length;
+            bar.classList.toggle('hidden', count === 0);
+            if (count === 0) return;
+
+            const word = count === 1 ? 'место' : (count < 5 ? 'места' : 'мест');
+            document.getElementById('trip-bar-count').textContent =
+                'Отмечено ' + count + ' ' + word;
+
+            const gaps = NF.trip.missing(trip);
+            const link = document.getElementById('trip-go');
+            link.setAttribute('href', 'plan.html?' + NF.trip.toQuery(trip));
+            link.classList.toggle('btn-disabled', gaps.length > 0);
+            link.textContent = gaps.length > 0 ? 'Сначала выбери даты' : 'Собрать план →';
+        }
+
+        /** Сколько дней получилось и чего ещё не хватает — словами. */
+        function renderTripSummary() {
+            const box = document.getElementById('trip-summary');
+            const parts = [];
+
+            if (trip.from && trip.to) {
+                const days = NF.dates.tripDays(trip.from, trip.to);
+                const word = days === 1 ? 'день' : (days < 5 ? 'дня' : 'дней');
+                parts.push(NF.dates.formatHuman(trip.from) + ' — ' +
+                           NF.dates.formatHuman(trip.to) + ', ' + days + ' ' + word);
+            }
+
+            const gaps = NF.trip.missing(trip);
+            if (gaps.length) parts.push('Не хватает: ' + gaps.join(', '));
+
+            dom.replace(box, dom.el('p', { text: parts.join(' · ') || 'Заполни даты' }));
+        }
+
+        /**
+         * Откуда начинается день. Отеля в данных нет, поэтому предлагаем центр
+         * города и любое из мест — этого хватает, чтобы расчёт был осмысленным.
+         */
+        function fillStartOptions(city) {
+            const select = document.getElementById('trip-start');
+            startOptions = [];
+
+            if (Number.isFinite(city.lat) && Number.isFinite(city.lng)) {
+                startOptions.push({ lat: city.lat, lng: city.lng, name: 'Центр города' });
+            }
+            places.forEach(function (place) {
+                startOptions.push({ lat: place.lat, lng: place.lng, name: place.name });
+            });
+
+            dom.clear(select);
+            select.append(dom.el('option', { attrs: { value: '' }, text: '— не указано —' }));
+            startOptions.forEach(function (option, index) {
+                select.append(dom.el('option', {
+                    attrs: { value: String(index) }, text: option.name,
+                }));
+            });
+
+            const current = startOptions.findIndex(function (option) {
+                return trip.start && Math.abs(option.lat - trip.start.lat) < 1e-6 &&
+                       Math.abs(option.lng - trip.start.lng) < 1e-6;
+            });
+
+            if (current !== -1) {
+                select.value = String(current);
+            } else if (!trip.start && startOptions.length && startOptions[0].name === 'Центр города') {
+                // Допущение A5: если человек ничего не выбрал, старт — центр города.
+                // Раньше центр был просто первым пунктом списка, а выбранным
+                // оставалось «не указано» — и расчёт честно ругался на отсутствие
+                // старта у города, координаты которого у нас есть.
+                select.value = '0';
+                trip = Object.assign({}, trip, { start: startOptions[0] });
+                persist();
+            } else {
+                select.value = '';
+            }
+
+            select.addEventListener('change', function () {
+                const chosen = startOptions[Number(select.value)];
+                trip = Object.assign({}, trip, { start: chosen || null });
+                persist();
+            });
+        }
+
+        function bindTripFields() {
+            const from = document.getElementById('trip-from');
+            const to = document.getElementById('trip-to');
+            from.value = trip.from || '';
+            to.value = trip.to || '';
+
+            [from, to].forEach(function (field) {
+                field.addEventListener('change', function () {
+                    trip = Object.assign({}, trip, { from: from.value || null, to: to.value || null });
+                    // Поля могли быть заполнены в обратном порядке — поездка это выправит.
+                    trip = NF.trip.fromQuery(NF.trip.toQuery(trip));
+                    from.value = trip.from || '';
+                    to.value = trip.to || '';
+                    persist();
+                });
+            });
+
+            document.getElementById('trip-clear').addEventListener('click', function () {
+                trip = NF.trip.empty(trip.cityId);
+                NF.trip.forget(trip.cityId);
+                from.value = '';
+                to.value = '';
+                document.getElementById('trip-start').value = '';
+                persist();
+                loadPlaces(trip.cityId);
+            });
         }
 
         // --- Запуск --------------------------------------------------------
@@ -275,15 +547,24 @@
                 dom.empty(cityContainer, '😕 Город не найден',
                     'Проверь ссылку или выбери город на главной.');
                 dom.empty(document.getElementById('places-container'), 'Мест нет', null);
-                dom.empty(document.getElementById('routes-container'), 'Маршрутов нет', null);
+                dom.empty(document.getElementById('routes-container'), 'Авторских маршрутов нет', null);
                 return;
             }
 
             renderCity(city);
 
-            // Места и маршруты независимы: одно не должно ждать другого.
-            loadPlaces(city.id);
+            // Ссылка могла быть старой, по имени города, — тогда идентификатора
+            // в ней нет, а поездке он нужен, чтобы её запомнить.
+            trip = Object.assign({}, trip, { cityId: city.id });
+
+            bindTripFields();
+            renderTripBar();
+            renderTripSummary();
+
+            // Маршруты авторов независимы от мест: одно не должно ждать другого.
             loadRoutes(city.id);
+            await loadPlaces(city.id);
+            fillStartOptions(city);
         }
 
         document.addEventListener('DOMContentLoaded', init);
