@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>План поездки — Nowhere Fast</title>
+    <meta name="description" content="План по дням: без возвратов, крюков и потерянных часов." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="assets/css/app.css" />
+</head>
+<body>
+
+<header class="site-header">
+    <div class="container header-inner">
+        <a href="index.html" class="logo">Nowhere<span>Fast</span></a>
+        <nav class="nav" aria-label="Основная навигация">
+            <a href="index.html">Главная</a>
+            <a href="index.html#cities">Города</a>
+        </nav>
+    </div>
+</header>
+
+<main>
+    <div class="container plan-hero">
+        <a id="back-link" href="index.html" class="btn-back">← Изменить выбор</a>
+        <div id="plan-head"></div>
+    </div>
+
+    <section class="section">
+        <div class="container">
+            <div id="plan-warnings"></div>
+            <div id="plan-days"></div>
+        </div>
+    </section>
+
+    <section class="section section-alt">
+        <div class="container">
+            <h2 class="section-title" style="text-align:left">📌 Рядом с твоим планом</h2>
+            <p class="section-sub" style="text-align:left">
+                Места, которые ты не отмечал, но которые оказались по пути
+            </p>
+            <div id="plan-nearby"></div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <!--
+                Блок допущений показывается всегда и не прячется.
+                Планировщик выдаёт порядок, который человек принимает на веру;
+                если не сказать, на каких числах он построен, это чёрный ящик
+                (docs/TRANSFER-FROM-WB.md, раздел 1.11).
+            -->
+            <details class="assumptions">
+                <summary>На чём построен этот расчёт</summary>
+                <div id="plan-assumptions"></div>
+            </details>
+        </div>
+    </section>
+</main>
+
+<footer class="site-footer">
+    <div class="container">
+        <div class="logo">Nowhere<span>Fast</span></div>
+        <p>&copy; 2026 Сделано для путешественников.</p>
+        <!--
+            Атрибуция обязательна по лицензии ODbL: данные о местах взяты
+            из OpenStreetMap. Убирать нельзя — это условие использования.
+        -->
+        <p class="attribution">
+            Данные о местах — <a href="https://www.openstreetmap.org/copyright"
+            rel="noopener">© участники OpenStreetMap</a>, ODbL
+        </p>
+    </div>
+</footer>
+
+<!-- Версия зафиксирована: плавающий «@2» однажды приедет с ломающей правкой. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/dom.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/dates.js"></script>
+<script src="assets/js/trip.js"></script>
+<script src="assets/js/planner.js"></script>
+<script>
+    (function () {
+        'use strict';
+
+        const dom = NF.dom;
+        const trip = NF.trip.resolve(window.location.search);
+
+        /** Подписи предупреждений. Тип приходит из расчёта, слова живут здесь. */
+        const WARNING_TITLE = {
+            not_fitted: '🧳 Не влезло',
+            idle: '🕳 Простой',
+            no_start: '📍 Старт не задан',
+            long_travel: '🚌 Долгий переход',
+        };
+
+        function plural(n, one, few, many) {
+            const mod10 = n % 10;
+            const mod100 = n % 100;
+            if (mod10 === 1 && mod100 !== 11) return one;
+            if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+            return many;
+        }
+
+        /** «95 мин» читается хуже, чем «1 ч 35 мин». */
+        function humanMinutes(total) {
+            const minutes = Math.round(total);
+            if (minutes < 60) return minutes + ' мин';
+            const hours = Math.floor(minutes / 60);
+            const rest = minutes % 60;
+            return hours + ' ч' + (rest ? ' ' + rest + ' мин' : '');
+        }
+
+        // --- Шапка плана ----------------------------------------------------
+
+        function renderHead(city, result) {
+            const container = document.getElementById('plan-head');
+            const days = result.days.length;
+            const planned = result.days.reduce(function (sum, day) {
+                return sum + day.items.length;
+            }, 0);
+
+            document.title = 'План — ' + city.name + ' — Nowhere Fast';
+
+            const copyButton = dom.el('button', {
+                class: 'btn btn-secondary btn-small',
+                text: 'Скопировать ссылку на план',
+                attrs: { type: 'button' },
+            });
+            copyButton.addEventListener('click', function () { copyLink(copyButton); });
+
+            dom.replace(container, [
+                dom.el('h1', { text: 'План по ' + city.name }),
+                dom.el('p', { class: 'description', text:
+                    NF.dates.formatHuman(trip.from) + ' — ' + NF.dates.formatHuman(trip.to) +
+                    ' · ' + days + ' ' + plural(days, 'день', 'дня', 'дней') +
+                    ' · ' + planned + ' ' + plural(planned, 'место', 'места', 'мест') +
+                    ' в плане' }),
+                dom.el('div', { class: 'plan-actions' }, [copyButton]),
+            ]);
+        }
+
+        function copyLink(button) {
+            const done = function (text) {
+                button.textContent = text;
+                window.setTimeout(function () {
+                    button.textContent = 'Скопировать ссылку на план';
+                }, 2000);
+            };
+            const url = window.location.href;
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(url).then(
+                    function () { done('Ссылка скопирована'); },
+                    function () { done('Скопируй из адресной строки'); }
+                );
+                return;
+            }
+            done('Скопируй из адресной строки');
+        }
+
+        // --- Предупреждения -------------------------------------------------
+
+        function renderWarnings(result) {
+            const container = document.getElementById('plan-warnings');
+            const all = (result.warnings || []).slice();
+
+            (result.dropped || []).forEach(function (item) {
+                all.push({
+                    type: 'dropped', date: null, value: 1,
+                    text: item.place.name + ' — ' + item.reason,
+                });
+            });
+
+            if (!all.length) {
+                dom.clear(container);
+                return;
+            }
+
+            dom.replace(container, dom.el('div', { class: 'warnings' },
+                all.map(function (warning) {
+                    return dom.el('div', { class: 'warning' }, [
+                        dom.el('span', { class: 'warning-kind',
+                            text: WARNING_TITLE[warning.type] || '⚠️ Внимание' }),
+                        dom.el('span', { text: warning.text }),
+                    ]);
+                })));
+        }
+
+        // --- Дни -------------------------------------------------------------
+
+        function planItem(item, index) {
+            const place = item.place;
+            const info = [
+                dom.el('div', { class: 'name', text: place.name }),
+                place.name_local ? dom.el('div', { class: 'local', text: place.name_local }) : null,
+                place.address_local
+                    ? dom.el('div', { class: 'location', text: '📍 ' + place.address_local })
+                    : null,
+                dom.el('div', { class: 'plan-duration', text:
+                    humanMinutes(item.minutes) + (item.minutesAssumed ? ' (по умолчанию)' : '') }),
+            ];
+
+            if (item.travelMinutesToNext !== null && item.travelMinutesToNext !== undefined) {
+                info.push(dom.el('div', { class: 'plan-travel', text:
+                    '↓ в пути ' + humanMinutes(item.travelMinutesToNext) + ' — оценка' }));
+            }
+
+            // Время прихода — главное число этой строки (AC-002). Показываем
+            // и время ухода: без него непонятно, откуда берётся следующий приход.
+            const clock = item.leave ? item.arrive + '–' + item.leave : item.arrive;
+
+            return dom.el('div', { class: 'plan-item' }, [
+                dom.el('span', { class: 'order', text: (index + 1) + '.' }),
+                dom.el('span', { class: 'plan-time', text: clock }),
+                dom.el('div', { class: 'info' }, info),
+            ]);
+        }
+
+        function planDay(day) {
+            const head = [
+                dom.el('div', { class: 'day-title', text: NF.dates.formatHuman(day.date) }),
+                dom.el('div', { class: 'day-desc', text:
+                    'в пути ' + humanMinutes(day.travelMinutesTotal) +
+                    ' · на местах ' + humanMinutes(day.visitMinutesTotal) +
+                    (day.idleMinutes > 0 ? ' · свободно ' + humanMinutes(day.idleMinutes) : '') }),
+            ];
+
+            if (!day.items.length) {
+                head.push(dom.el('p', { class: 'desc', text: 'В этот день ничего не запланировано.' }));
+                return dom.el('div', { class: 'plan-day' }, head);
+            }
+
+            return dom.el('div', { class: 'plan-day' },
+                head.concat([dom.el('div', {}, day.items.map(planItem))]));
+        }
+
+        function renderDays(result) {
+            const container = document.getElementById('plan-days');
+            if (!result.days.length) {
+                dom.empty(container, 'План пуст',
+                    'Ни одно из отмеченных мест не удалось разместить. Подробности выше.');
+                return;
+            }
+            dom.replace(container, result.days.map(planDay));
+        }
+
+        // --- Что рядом -------------------------------------------------------
+
+        function renderNearby(result) {
+            const container = document.getElementById('plan-nearby');
+            const nearby = result.nearby || [];
+
+            if (!nearby.length) {
+                dom.empty(container, 'Рядом ничего не нашлось',
+                    'Либо всё близкое уже в плане, либо остальные места далеко.');
+                return;
+            }
+
+            dom.replace(container, dom.el('div', { class: 'places-grid' },
+                nearby.map(function (hint) {
+                    return dom.el('div', { class: 'place-card' }, [
+                        dom.el('h3', { text: hint.place.name }),
+                        hint.place.name_local
+                            ? dom.el('div', { class: 'local', text: hint.place.name_local }) : null,
+                        dom.el('div', { class: 'desc', text:
+                            humanMinutes(hint.minutes) + ' от «' + hint.fromPlace.name + '»' +
+                            (hint.date ? ' · ' + NF.dates.formatHuman(hint.date) : '') }),
+                    ]);
+                })));
+        }
+
+        // --- На чём построен расчёт ------------------------------------------
+
+        function renderAssumptions(result) {
+            const container = document.getElementById('plan-assumptions');
+            const explain = (result.explain || {});
+            // Имя поля важно: расчёт отдаёт explain.assumptions. Раньше здесь
+            // читалось explain.options — и таблица молча показывала запасные
+            // значения вместо настоящих. Ровно тот случай, когда неверное число
+            // выглядит правдоподобно.
+            const a = explain.assumptions || {};
+            const totals = explain.totals || {};
+
+            const rows = [
+                ['Окно дня', (a.dayStart || '—') + ' — ' + (a.dayEnd || '—') + ' по времени города'],
+                ['Время посещения, если его нет у места', (a.defaultVisitMinutes || '—') + ' мин'],
+                ['Время в пути', 'по прямой, с поправкой ×' + (a.detourFactor || '—') +
+                    ', при скорости ' + (a.speedKmh || '—') + ' км/ч'],
+                ['Порог «рядом»', (a.nearbyMinutes || '—') + ' мин'],
+                ['Точка старта', a.startGiven ? 'задана' : 'не задана — первый переход не посчитан'],
+            ];
+
+            const summary = [];
+            if (totals.placesSelected !== undefined) {
+                summary.push('Отмечено ' + totals.placesSelected +
+                    ', в плане ' + totals.placesPlanned +
+                    (totals.placesDropped ? ', отброшено ' + totals.placesDropped : '') +
+                    (totals.placesNotFitted ? ', не влезло ' + totals.placesNotFitted : ''));
+            }
+            if (totals.travelMinutes !== undefined) {
+                summary.push('Всего в пути ' + humanMinutes(totals.travelMinutes) +
+                    ', на местах ' + humanMinutes(totals.visitMinutes) +
+                    ', свободно ' + humanMinutes(totals.idleMinutes));
+            }
+
+            dom.replace(container, [
+                dom.el('p', { text:
+                    'Это допущения, а не измерения. Ни одно из них не согласовано с владельцем — ' +
+                    'каждое отменяется одним словом, и тогда числа пересчитаются.' }),
+                dom.el('div', { class: 'city-meta' }, rows.map(function (row) {
+                    return dom.el('div', { class: 'city-meta-item' }, [
+                        dom.el('span', { class: 'label', text: row[0] }),
+                        dom.el('span', { class: 'value', text: row[1] }),
+                    ]);
+                })),
+                summary.length
+                    ? dom.el('ul', { class: 'explain-list' }, summary.map(function (line) {
+                          return dom.el('li', { text: line });
+                      }))
+                    : null,
+                (a.notes || []).length
+                    ? dom.el('ul', { class: 'explain-list' }, a.notes.map(function (note) {
+                          return dom.el('li', { text: note });
+                      }))
+                    : null,
+            ]);
+        }
+
+        // --- Запуск -----------------------------------------------------------
+
+        function fail(message) {
+            dom.replace(document.getElementById('plan-head'), [
+                dom.el('h1', { text: 'План не построен' }),
+                dom.el('p', { class: 'description', text: message }),
+            ]);
+            dom.clear(document.getElementById('plan-days'));
+            dom.clear(document.getElementById('plan-nearby'));
+        }
+
+        async function init() {
+            const back = document.getElementById('back-link');
+            if (trip.cityId) {
+                back.setAttribute('href', 'city.html?' + NF.trip.toQuery(trip));
+            }
+
+            const gaps = NF.trip.missing(trip);
+            if (!trip.cityId || gaps.length) {
+                fail('Не хватает: ' + (trip.cityId ? gaps.join(', ') : 'город не выбран') +
+                     '. Вернись и заполни.');
+                return;
+            }
+
+            let city, places;
+            try {
+                city = await NF.api.getCityById(trip.cityId);
+                if (!city) { fail('Такого города нет. Проверь ссылку.'); return; }
+                places = await NF.api.listPlaces(trip.cityId);
+            } catch (error) {
+                console.error('Nowhere Fast:', error);
+                fail('Не удалось загрузить данные города. Попробуй обновить страницу.');
+                return;
+            }
+
+            const result = NF.planner.planRoute({
+                places: places,
+                selectedIds: trip.selected,
+                dates: NF.dates.listTripDates(trip.from, trip.to),
+                start: trip.start,
+            });
+
+            renderHead(city, result);
+            renderWarnings(result);
+            renderDays(result);
+            renderNearby(result);
+            renderAssumptions(result);
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    })();
+</script>
+</body>
+</html>
