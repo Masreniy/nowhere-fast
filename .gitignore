@@ -147,3 +147,8 @@ vite.config.ts.timestamp-*
 # assets/data/globe-stars.js) коммитятся — см. tools/globe/README.md.
 tools/globe/node_modules/
 tools/globe/.cache/
+
+# Личные настройки Claude Code: они разрешают выполнять произвольный SQL
+# в базе проекта без подтверждения. Это решение каждого за себя, а не
+# за команду, поэтому в репозиторий файл не едет.
+.claude/settings.local.json
