@@ -109,3 +109,91 @@ test('ключи командной строки', function () {
     assert.match(verify.parseArgs(['--sql=/tmp', '--whatever']).problem, /непонятный ключ/);
     assert.strictEqual(verify.parseArgs(['--sql=/tmp', '--chunks']).chunks, true);
 });
+
+// --- Написания на десяти языках ------------------------------------------
+
+const NAMES_SQL_TEXT = [
+    'update public.geo_cities as g',
+    'set names = v.names::jsonb',
+    'from (values',
+    '    (292223, \'{"ru":"Дубай","en":"Dubai","zh":"迪拜"}\'),',
+    '    (786714, \'{"ru":"Приштина","en":"Pristina"}\'),',
+    '    (3448439, \'{"ru":"Сан-Паулу","en":"São Paulo","ja":"サンパウロ"}\')',
+    ') as v(geoname_id, names)',
+    'where g.geoname_id = v.geoname_id;'
+].join('\n');
+
+test('строки написаний разбираются, заголовок и хвост — нет', function () {
+    const rows = verify.parseNameRows(NAMES_SQL_TEXT);
+    assert.strictEqual(rows.length, 3);
+    assert.strictEqual(rows[0].id, 292223);
+    assert.strictEqual(rows[0].names.zh, '迪拜');
+    assert.strictEqual(rows[2].names.ja, 'サンパウロ');
+});
+
+test('отсутствующий язык участвует пустой строкой, а не пропускается', function () {
+    // Иначе «нет ключа ar» и «ar пустой» дали бы один хэш, и потеря целого
+    // языка прошла бы мимо сверки.
+    const rows = verify.parseNameRows(NAMES_SQL_TEXT);
+    const withEmpty = rows.map(function (row) {
+        return { id: row.id, names: Object.assign({ ar: '' }, row.names) };
+    });
+    assert.strictEqual(
+        verify.namesChecksum(withEmpty).names_md5,
+        verify.namesChecksum(rows).names_md5
+    );
+    // А вот заполненный ar обязан изменить хэш.
+    const withArabic = rows.map(function (row) {
+        return { id: row.id, names: Object.assign({}, row.names, { ar: 'دبي' }) };
+    });
+    assert.notStrictEqual(
+        verify.namesChecksum(withArabic).names_md5,
+        verify.namesChecksum(rows).names_md5
+    );
+});
+
+test('порядок строк на хэш не влияет, порядок языков — влияет', function () {
+    const rows = verify.parseNameRows(NAMES_SQL_TEXT);
+    const shuffled = [rows[2], rows[0], rows[1]];
+    assert.strictEqual(
+        verify.namesChecksum(shuffled).names_md5,
+        verify.namesChecksum(rows).names_md5
+    );
+    // Порядок языков зашит в LANGS и повторён в SQL: перепутать — значит
+    // получить расхождение на здоровых данных.
+    assert.deepStrictEqual(verify.LANGS.slice(0, 3), ['ru', 'en', 'zh']);
+    assert.strictEqual(verify.LANGS.length, 10);
+});
+
+test('подменённое написание меняет хэш', function () {
+    const rows = verify.parseNameRows(NAMES_SQL_TEXT);
+    const broken = verify.parseNameRows(NAMES_SQL_TEXT.replace('迪拜', '迪報'));
+    assert.notStrictEqual(
+        verify.namesChecksum(broken).names_md5,
+        verify.namesChecksum(rows).names_md5
+    );
+    assert.strictEqual(verify.namesChecksum(broken).sum_id, verify.namesChecksum(rows).sum_id);
+});
+
+test('написание без города в справочнике отбрасывается и считается', function () {
+    // Приштина: у Косова нет кода ISO, страны в справочнике нет, города тоже.
+    // Решение владельца — оставить как есть (ADR-0010). Сверка обязана знать
+    // об этом, иначе она будет вечно показывать расхождение в пять строк.
+    const rows = verify.parseNameRows(NAMES_SQL_TEXT);
+    const cityFiles = [{ file: 'geo-cities-01.sql', rows: [{ id: 292223 }, { id: 3448439 }] }];
+    const matched = verify.matchedNames(rows, cityFiles);
+    assert.strictEqual(matched.dropped, 1);
+    assert.deepStrictEqual(matched.rows.map(function (r) { return r.id; }), [292223, 3448439]);
+});
+
+test('без файлов городов сверка не отбрасывает молча, а признаётся', function () {
+    const rows = verify.parseNameRows(NAMES_SQL_TEXT);
+    const matched = verify.matchedNames(rows, []);
+    assert.strictEqual(matched.dropped, null);
+    assert.strictEqual(matched.rows.length, 3);
+});
+
+test('ключ --names распознаётся', function () {
+    assert.strictEqual(verify.parseArgs(['--sql=/tmp', '--names']).names, true);
+    assert.strictEqual(verify.parseArgs(['--sql=/tmp']).names, false);
+});
