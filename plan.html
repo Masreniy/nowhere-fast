@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>План поездки — Nowhere Fast</title>
-    <meta name="description" content="План по дням: без возвратов, крюков и потерянных часов." />
+    <title data-i18n="page.plan.title">План поездки — Nowhere Fast</title>
+    <meta name="description" data-i18n-attr="content:page.plan.desc" content="План по дням: без возвратов, крюков и потерянных часов." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
@@ -15,16 +15,18 @@
 <header class="site-header">
     <div class="container header-inner">
         <a href="index.html" class="logo">Nowhere<span>Fast</span></a>
-        <nav class="nav" aria-label="Основная навигация">
-            <a href="index.html">Главная</a>
-            <a href="index.html#cities">Города</a>
+        <nav class="nav" data-i18n-attr="aria-label:nav.aria" aria-label="Основная навигация">
+            <a href="index.html" data-i18n="nav.home">Главная</a>
+            <a href="index.html#cities" data-i18n="nav.cities">Города</a>
         </nav>
+        <!-- Язык — свойство всего проекта, поэтому переключатель есть на каждой странице. -->
+        <div id="lang-switcher"></div>
     </div>
 </header>
 
 <main>
     <div class="container plan-hero">
-        <a id="back-link" href="index.html" class="btn-back">← Изменить выбор</a>
+        <a id="back-link" href="index.html" class="btn-back" data-i18n="plan.back">← Изменить выбор</a>
         <div id="plan-head"></div>
     </div>
 
@@ -37,8 +39,8 @@
 
     <section class="section section-alt">
         <div class="container">
-            <h2 class="section-title" style="text-align:left">📌 Рядом с твоим планом</h2>
-            <p class="section-sub" style="text-align:left">
+            <h2 class="section-title" style="text-align:left" data-i18n="plan.nearbyTitle">📌 Рядом с твоим планом</h2>
+            <p class="section-sub" style="text-align:left" data-i18n="plan.nearbySub">
                 Места, которые ты не отмечал, но которые оказались по пути
             </p>
             <div id="plan-nearby"></div>
@@ -54,7 +56,7 @@
                 (docs/TRANSFER-FROM-WB.md, раздел 1.11).
             -->
             <details class="assumptions">
-                <summary>На чём построен этот расчёт</summary>
+                <summary data-i18n="plan.assumptionsSummary">На чём построен этот расчёт</summary>
                 <div id="plan-assumptions"></div>
             </details>
         </div>
@@ -64,14 +66,16 @@
 <footer class="site-footer">
     <div class="container">
         <div class="logo">Nowhere<span>Fast</span></div>
-        <p>&copy; 2026 Сделано для путешественников.</p>
+        <p data-i18n="footer.copyright">&copy; 2026 Сделано для путешественников.</p>
         <!--
             Атрибуция обязательна по лицензии ODbL: данные о местах взяты
             из OpenStreetMap. Убирать нельзя — это условие использования.
+            Название лицензии не переводится — это имя собственное.
         -->
         <p class="attribution">
-            Данные о местах — <a href="https://www.openstreetmap.org/copyright"
-            rel="noopener">© участники OpenStreetMap</a>, ODbL
+            <span data-i18n="footer.data">Данные о местах — </span><a
+            href="https://www.openstreetmap.org/copyright" rel="noopener"
+            data-i18n="footer.osm">© участники OpenStreetMap</a>, ODbL
         </p>
     </div>
 </footer>
@@ -79,7 +83,10 @@
 <!-- Версия зафиксирована: плавающий «@2» однажды приедет с ломающей правкой. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0"></script>
 <script src="assets/js/config.js"></script>
+<script src="assets/js/geo.js"></script>
 <script src="assets/js/dom.js"></script>
+<script src="assets/js/i18n-strings.js"></script>
+<script src="assets/js/i18n.js"></script>
 <script src="assets/js/api.js"></script>
 <script src="assets/js/dates.js"></script>
 <script src="assets/js/trip.js"></script>
@@ -89,58 +96,80 @@
         'use strict';
 
         const dom = NF.dom;
+        const t = NF.i18n.t;
         const trip = NF.trip.resolve(window.location.search);
 
+        /** Город и расчёт. Смена языка перерисовывает их, не считая заново. */
+        let city = null;
+        let result = null;
+
+        /**
+         * Почему план не построен — функцией, а не готовой строкой.
+         * Иначе сообщение об ошибке осталось бы на языке, выбранном в момент,
+         * когда она случилась, и переключатель бы его не догнал.
+         */
+        let failReason = null;
+
         /** Подписи предупреждений. Тип приходит из расчёта, слова живут здесь. */
-        const WARNING_TITLE = {
-            not_fitted: '🧳 Не влезло',
-            idle: '🕳 Простой',
-            no_start: '📍 Старт не задан',
-            long_travel: '🚌 Долгий переход',
+        const WARNING_KEY = {
+            not_fitted: 'warning.not_fitted',
+            idle: 'warning.idle',
+            no_start: 'warning.no_start',
+            long_travel: 'warning.long_travel',
         };
 
-        function plural(n, one, few, many) {
-            const mod10 = n % 10;
-            const mod100 = n % 100;
-            if (mod10 === 1 && mod100 !== 11) return one;
-            if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
-            return many;
+        /**
+         * Чего не хватает поездке, словами.
+         *
+         * NF.trip.missing() отдаёт русские строки: модуль поездки про язык
+         * интерфейса не знает и знать не должен. Перевод — здесь, на границе показа.
+         */
+        const GAP_KEYS = {
+            'даты поездки': 'gap.dates',
+            'хотя бы одно отмеченное место': 'gap.places',
+        };
+
+        function gapsText() {
+            return NF.trip.missing(trip).map(function (gap) {
+                return GAP_KEYS[gap] ? t(GAP_KEYS[gap]) : gap;
+            });
         }
 
         /** «95 мин» читается хуже, чем «1 ч 35 мин». */
         function humanMinutes(total) {
             const minutes = Math.round(total);
-            if (minutes < 60) return minutes + ' мин';
+            if (minutes < 60) return t('unit.minutes', { n: minutes });
+
             const hours = Math.floor(minutes / 60);
             const rest = minutes % 60;
-            return hours + ' ч' + (rest ? ' ' + rest + ' мин' : '');
+            return t('unit.hours', { n: hours }) +
+                   (rest ? ' ' + t('unit.minutes', { n: rest }) : '');
         }
 
         // --- Шапка плана ----------------------------------------------------
 
-        function renderHead(city, result) {
+        function renderHead() {
             const container = document.getElementById('plan-head');
             const days = result.days.length;
             const planned = result.days.reduce(function (sum, day) {
                 return sum + day.items.length;
             }, 0);
 
-            document.title = 'План — ' + city.name + ' — Nowhere Fast';
+            document.title = t('plan.docTitle', { city: city.name });
 
             const copyButton = dom.el('button', {
                 class: 'btn btn-secondary btn-small',
-                text: 'Скопировать ссылку на план',
+                text: t('plan.copy'),
                 attrs: { type: 'button' },
             });
             copyButton.addEventListener('click', function () { copyLink(copyButton); });
 
             dom.replace(container, [
-                dom.el('h1', { text: 'План по ' + city.name }),
+                dom.el('h1', { text: t('plan.title', { city: city.name }) }),
                 dom.el('p', { class: 'description', text:
                     NF.dates.formatHuman(trip.from) + ' — ' + NF.dates.formatHuman(trip.to) +
-                    ' · ' + days + ' ' + plural(days, 'день', 'дня', 'дней') +
-                    ' · ' + planned + ' ' + plural(planned, 'место', 'места', 'мест') +
-                    ' в плане' }),
+                    ' · ' + t('unit.days', { n: days }) +
+                    ' · ' + t('plan.inPlan', { places: t('unit.places', { n: planned }) }) }),
                 dom.el('div', { class: 'plan-actions' }, [copyButton]),
             ]);
         }
@@ -149,26 +178,29 @@
             const done = function (text) {
                 button.textContent = text;
                 window.setTimeout(function () {
-                    button.textContent = 'Скопировать ссылку на план';
+                    button.textContent = t('plan.copy');
                 }, 2000);
             };
             const url = window.location.href;
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(url).then(
-                    function () { done('Ссылка скопирована'); },
-                    function () { done('Скопируй из адресной строки'); }
+                    function () { done(t('plan.copied')); },
+                    function () { done(t('plan.copyManual')); }
                 );
                 return;
             }
-            done('Скопируй из адресной строки');
+            done(t('plan.copyManual'));
         }
 
         // --- Предупреждения -------------------------------------------------
 
-        function renderWarnings(result) {
+        function renderWarnings() {
             const container = document.getElementById('plan-warnings');
             const all = (result.warnings || []).slice();
 
+            // Текст предупреждения приходит из расчёта и остаётся на русском:
+            // его собирает assets/js/planner.js, и перевод чисел и причин —
+            // отдельная работа внутри расчёта, а не на этой странице.
             (result.dropped || []).forEach(function (item) {
                 all.push({
                     type: 'dropped', date: null, value: 1,
@@ -185,7 +217,7 @@
                 all.map(function (warning) {
                     return dom.el('div', { class: 'warning' }, [
                         dom.el('span', { class: 'warning-kind',
-                            text: WARNING_TITLE[warning.type] || '⚠️ Внимание' }),
+                            text: t(WARNING_KEY[warning.type] || 'warning.other') }),
                         dom.el('span', { text: warning.text }),
                     ]);
                 })));
@@ -202,12 +234,13 @@
                     ? dom.el('div', { class: 'location', text: '📍 ' + place.address_local })
                     : null,
                 dom.el('div', { class: 'plan-duration', text:
-                    humanMinutes(item.minutes) + (item.minutesAssumed ? ' (по умолчанию)' : '') }),
+                    humanMinutes(item.minutes) +
+                    (item.minutesAssumed ? ' ' + t('plan.default') : '') }),
             ];
 
             if (item.travelMinutesToNext !== null && item.travelMinutesToNext !== undefined) {
                 info.push(dom.el('div', { class: 'plan-travel', text:
-                    '↓ в пути ' + humanMinutes(item.travelMinutesToNext) + ' — оценка' }));
+                    t('plan.travelNext', { time: humanMinutes(item.travelMinutesToNext) }) }));
             }
 
             // Время прихода — главное число этой строки (AC-002). Показываем
@@ -222,16 +255,21 @@
         }
 
         function planDay(day) {
+            const totals = [
+                t('plan.dayTravel', { time: humanMinutes(day.travelMinutesTotal) }),
+                t('plan.dayVisit', { time: humanMinutes(day.visitMinutesTotal) }),
+            ];
+            if (day.idleMinutes > 0) {
+                totals.push(t('plan.dayFree', { time: humanMinutes(day.idleMinutes) }));
+            }
+
             const head = [
                 dom.el('div', { class: 'day-title', text: NF.dates.formatHuman(day.date) }),
-                dom.el('div', { class: 'day-desc', text:
-                    'в пути ' + humanMinutes(day.travelMinutesTotal) +
-                    ' · на местах ' + humanMinutes(day.visitMinutesTotal) +
-                    (day.idleMinutes > 0 ? ' · свободно ' + humanMinutes(day.idleMinutes) : '') }),
+                dom.el('div', { class: 'day-desc', text: totals.join(' · ') }),
             ];
 
             if (!day.items.length) {
-                head.push(dom.el('p', { class: 'desc', text: 'В этот день ничего не запланировано.' }));
+                head.push(dom.el('p', { class: 'desc', text: t('plan.dayEmpty') }));
                 return dom.el('div', { class: 'plan-day' }, head);
             }
 
@@ -239,11 +277,10 @@
                 head.concat([dom.el('div', {}, day.items.map(planItem))]));
         }
 
-        function renderDays(result) {
+        function renderDays() {
             const container = document.getElementById('plan-days');
             if (!result.days.length) {
-                dom.empty(container, 'План пуст',
-                    'Ни одно из отмеченных мест не удалось разместить. Подробности выше.');
+                dom.empty(container, t('plan.emptyTitle'), t('plan.emptyText'));
                 return;
             }
             dom.replace(container, result.days.map(planDay));
@@ -251,32 +288,72 @@
 
         // --- Что рядом -------------------------------------------------------
 
-        function renderNearby(result) {
+        function renderNearby() {
             const container = document.getElementById('plan-nearby');
             const nearby = result.nearby || [];
 
             if (!nearby.length) {
-                dom.empty(container, 'Рядом ничего не нашлось',
-                    'Либо всё близкое уже в плане, либо остальные места далеко.');
+                dom.empty(container, t('plan.nearbyEmptyTitle'), t('plan.nearbyEmptyText'));
                 return;
             }
 
             dom.replace(container, dom.el('div', { class: 'places-grid' },
                 nearby.map(function (hint) {
+                    const from = t('plan.nearbyFrom', {
+                        time: humanMinutes(hint.minutes), place: hint.fromPlace.name,
+                    });
                     return dom.el('div', { class: 'place-card' }, [
                         dom.el('h3', { text: hint.place.name }),
                         hint.place.name_local
                             ? dom.el('div', { class: 'local', text: hint.place.name_local }) : null,
                         dom.el('div', { class: 'desc', text:
-                            humanMinutes(hint.minutes) + ' от «' + hint.fromPlace.name + '»' +
-                            (hint.date ? ' · ' + NF.dates.formatHuman(hint.date) : '') }),
+                            from + (hint.date ? ' · ' + NF.dates.formatHuman(hint.date) : '') }),
                     ]);
                 })));
         }
 
         // --- На чём построен расчёт ------------------------------------------
 
-        function renderAssumptions(result) {
+        /** Строки таблицы допущений: подпись и значение, оба переводятся. */
+        function assumptionRows(a) {
+            return [
+                [t('assume.window'), t('assume.windowValue', {
+                    from: a.dayStart || '—', to: a.dayEnd || '—' })],
+                [t('assume.visit'), a.defaultVisitMinutes
+                    ? t('unit.minutes', { n: a.defaultVisitMinutes }) : '—'],
+                [t('assume.travel'), t('assume.travelValue', {
+                    factor: a.detourFactor || '—', speed: a.speedKmh || '—' })],
+                [t('assume.nearby'), a.nearbyMinutes
+                    ? t('unit.minutes', { n: a.nearbyMinutes }) : '—'],
+                [t('assume.start'), a.startGiven ? t('assume.startGiven') : t('assume.startMissing')],
+            ];
+        }
+
+        /** Итоги расчёта словами: сколько отмечено, сколько влезло, сколько времени. */
+        function assumptionTotals(totals) {
+            const summary = [];
+
+            if (totals.placesSelected !== undefined) {
+                summary.push(t('assume.totalsPlaces', {
+                    selected: totals.placesSelected, planned: totals.placesPlanned }) +
+                    (totals.placesDropped
+                        ? t('assume.totalsDropped', { dropped: totals.placesDropped }) : '') +
+                    (totals.placesNotFitted
+                        ? t('assume.totalsNotFitted', { notFitted: totals.placesNotFitted }) : ''));
+            }
+
+            if (totals.travelMinutes !== undefined) {
+                summary.push(t('assume.totalsTime', {
+                    travel: humanMinutes(totals.travelMinutes),
+                    visit: humanMinutes(totals.visitMinutes),
+                    idle: humanMinutes(totals.idleMinutes),
+                }));
+            }
+
+            return summary;
+        }
+
+        function renderAssumptions() {
             const container = document.getElementById('plan-assumptions');
             const explain = (result.explain || {});
             // Имя поля важно: расчёт отдаёт explain.assumptions. Раньше здесь
@@ -284,35 +361,11 @@
             // значения вместо настоящих. Ровно тот случай, когда неверное число
             // выглядит правдоподобно.
             const a = explain.assumptions || {};
-            const totals = explain.totals || {};
-
-            const rows = [
-                ['Окно дня', (a.dayStart || '—') + ' — ' + (a.dayEnd || '—') + ' по времени города'],
-                ['Время посещения, если его нет у места', (a.defaultVisitMinutes || '—') + ' мин'],
-                ['Время в пути', 'по прямой, с поправкой ×' + (a.detourFactor || '—') +
-                    ', при скорости ' + (a.speedKmh || '—') + ' км/ч'],
-                ['Порог «рядом»', (a.nearbyMinutes || '—') + ' мин'],
-                ['Точка старта', a.startGiven ? 'задана' : 'не задана — первый переход не посчитан'],
-            ];
-
-            const summary = [];
-            if (totals.placesSelected !== undefined) {
-                summary.push('Отмечено ' + totals.placesSelected +
-                    ', в плане ' + totals.placesPlanned +
-                    (totals.placesDropped ? ', отброшено ' + totals.placesDropped : '') +
-                    (totals.placesNotFitted ? ', не влезло ' + totals.placesNotFitted : ''));
-            }
-            if (totals.travelMinutes !== undefined) {
-                summary.push('Всего в пути ' + humanMinutes(totals.travelMinutes) +
-                    ', на местах ' + humanMinutes(totals.visitMinutes) +
-                    ', свободно ' + humanMinutes(totals.idleMinutes));
-            }
+            const summary = assumptionTotals(explain.totals || {});
 
             dom.replace(container, [
-                dom.el('p', { text:
-                    'Это допущения, а не измерения. Ни одно из них не согласовано с владельцем — ' +
-                    'каждое отменяется одним словом, и тогда числа пересчитаются.' }),
-                dom.el('div', { class: 'city-meta' }, rows.map(function (row) {
+                dom.el('p', { text: t('assume.intro') }),
+                dom.el('div', { class: 'city-meta' }, assumptionRows(a).map(function (row) {
                     return dom.el('div', { class: 'city-meta-item' }, [
                         dom.el('span', { class: 'label', text: row[0] }),
                         dom.el('span', { class: 'value', text: row[1] }),
@@ -323,6 +376,8 @@
                           return dom.el('li', { text: line });
                       }))
                     : null,
+                // Пояснения расчёта приходят из planner.js готовыми строками
+                // и остаются на русском — см. отчёт по переводу.
                 (a.notes || []).length
                     ? dom.el('ul', { class: 'explain-list' }, a.notes.map(function (note) {
                           return dom.el('li', { text: note });
@@ -333,51 +388,63 @@
 
         // --- Запуск -----------------------------------------------------------
 
-        function fail(message) {
+        function fail(reason) {
+            failReason = reason;
             dom.replace(document.getElementById('plan-head'), [
-                dom.el('h1', { text: 'План не построен' }),
-                dom.el('p', { class: 'description', text: message }),
+                dom.el('h1', { text: t('plan.failTitle') }),
+                dom.el('p', { class: 'description', text: reason() }),
             ]);
             dom.clear(document.getElementById('plan-days'));
             dom.clear(document.getElementById('plan-nearby'));
         }
 
+        function renderAll() {
+            if (failReason) { fail(failReason); return; }
+            if (!city || !result) return;
+            renderHead();
+            renderWarnings();
+            renderDays();
+            renderNearby();
+            renderAssumptions();
+        }
+
         async function init() {
+            NF.i18n.apply(document);
+            NF.i18n.mountSwitcher(document.getElementById('lang-switcher'));
+            NF.i18n.onChange(renderAll);
+
             const back = document.getElementById('back-link');
             if (trip.cityId) {
                 back.setAttribute('href', 'city.html?' + NF.trip.toQuery(trip));
             }
 
-            const gaps = NF.trip.missing(trip);
-            if (!trip.cityId || gaps.length) {
-                fail('Не хватает: ' + (trip.cityId ? gaps.join(', ') : 'город не выбран') +
-                     '. Вернись и заполни.');
+            if (!trip.cityId || gapsText().length) {
+                fail(function () {
+                    return t('plan.failGaps', { list: trip.cityId
+                        ? gapsText().join(', ') : t('plan.failNoCity') });
+                });
                 return;
             }
 
-            let city, places;
+            let places;
             try {
                 city = await NF.api.getCityById(trip.cityId);
-                if (!city) { fail('Такого города нет. Проверь ссылку.'); return; }
+                if (!city) { fail(function () { return t('plan.failCityMissing'); }); return; }
                 places = await NF.api.listPlaces(trip.cityId);
             } catch (error) {
                 console.error('Nowhere Fast:', error);
-                fail('Не удалось загрузить данные города. Попробуй обновить страницу.');
+                fail(function () { return t('plan.failLoad'); });
                 return;
             }
 
-            const result = NF.planner.planRoute({
+            result = NF.planner.planRoute({
                 places: places,
                 selectedIds: trip.selected,
                 dates: NF.dates.listTripDates(trip.from, trip.to),
                 start: trip.start,
             });
 
-            renderHead(city, result);
-            renderWarnings(result);
-            renderDays(result);
-            renderNearby(result);
-            renderAssumptions(result);
+            renderAll();
         }
 
         document.addEventListener('DOMContentLoaded', init);

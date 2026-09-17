@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Админка — Nowhere Fast</title>
+    <title data-i18n="page.admin.title">Админка — Nowhere Fast</title>
     <meta name="robots" content="noindex, nofollow" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="assets/css/app.css" />
@@ -11,8 +11,15 @@
 </head>
 <body>
 <div class="container">
-    <h1 class="admin-title">🔧 Админка Nowhere Fast</h1>
-    <p class="admin-sub">Города, места и маршруты</p>
+    <h1 class="admin-title" data-i18n="admin.title">🔧 Админка Nowhere Fast</h1>
+    <p class="admin-sub" data-i18n="admin.sub">Города, места и маршруты</p>
+
+    <!--
+        Шапки с навигацией у админки нет, поэтому переключатель языка стоит
+        рядом с заголовком. Язык один на весь проект: выбранный здесь, он
+        останется выбранным на публичных страницах.
+    -->
+    <div id="lang-switcher" class="admin-lang"></div>
 
     <!--
         Предупреждение показывается намеренно и не убирается «чтобы не мешало».
@@ -23,20 +30,23 @@
         ни у кого, а форма ниже не срабатывает — и об этом текст молчал.
     -->
     <div class="notice" id="write-notice">
-        <strong>Запись ограничена политиками RLS</strong>
-        С 16.09.2026 добавлять, править и удалять может только вошедший автор
-        своих записей (ADR-0005). Без входа форма ниже не сработает ни у кого,
-        включая владельца, — тогда данные заводятся через интерфейс Supabase
-        или MCP-коннектор.
-        Подробности — <code>docs/adr/0005-apply-rls-before-auth.md</code>
-        и <code>supabase/policies.sql</code>.
+        <strong data-i18n="admin.noticeTitle">Запись ограничена политиками RLS</strong>
+        <span data-i18n="admin.noticeText">
+            С 16.09.2026 добавлять, править и удалять может только вошедший автор
+            своих записей (ADR-0005). Без входа форма ниже не сработает ни у кого,
+            включая владельца, — тогда данные заводятся через интерфейс Supabase
+            или MCP-коннектор.
+        </span>
+        <span data-i18n="admin.noticeDocs">Подробности —</span>
+        <code>docs/adr/0005-apply-rls-before-auth.md</code>
+        <code>supabase/policies.sql</code>
         <span id="session-state"></span>
     </div>
 
     <div class="tabs" role="tablist">
-        <button role="tab" aria-selected="true" data-tab="places">📍 Места</button>
-        <button role="tab" aria-selected="false" data-tab="cities">🏙️ Города</button>
-        <button role="tab" aria-selected="false" data-tab="routes">🗺️ Маршруты</button>
+        <button role="tab" aria-selected="true" data-tab="places" data-i18n="admin.tab.places">📍 Места</button>
+        <button role="tab" aria-selected="false" data-tab="cities" data-i18n="admin.tab.cities">🏙️ Города</button>
+        <button role="tab" aria-selected="false" data-tab="routes" data-i18n="admin.tab.routes">🗺️ Маршруты</button>
     </div>
 
     <!-- ---------------------------------------------------------------- -->
@@ -44,73 +54,79 @@
     <!-- ---------------------------------------------------------------- -->
     <section id="tab-places">
         <div class="card">
-            <h2>➕ Добавить место</h2>
+            <h2 data-i18n="admin.addPlace">➕ Добавить место</h2>
             <form id="place-form" novalidate>
                 <div class="form-group">
-                    <label for="place-city">Город *</label>
+                    <label for="place-city" data-i18n="admin.city">Город *</label>
                     <select id="place-city" required></select>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="place-name">Название *</label>
-                        <span class="hint">На языке интерфейса</span>
+                        <label for="place-name" data-i18n="admin.name">Название *</label>
+                        <span class="hint" data-i18n="admin.nameHint">На языке интерфейса</span>
                         <input id="place-name" required placeholder="Парк Юэсю" />
                     </div>
                     <div class="form-group">
-                        <label for="place-name-local">Местное написание</label>
-                        <span class="hint">То, что понимает навигатор</span>
+                        <label for="place-name-local" data-i18n="admin.nameLocal">Местное написание</label>
+                        <span class="hint" data-i18n="admin.nameLocalHint">То, что понимает навигатор</span>
                         <input id="place-name-local" placeholder="越秀公园" />
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="place-lat">Широта *</label>
-                        <span class="hint">От −90 до 90</span>
+                        <label for="place-lat" data-i18n="admin.lat">Широта *</label>
+                        <span class="hint" data-i18n="admin.latHint">От −90 до 90</span>
                         <input id="place-lat" type="number" step="any" min="-90" max="90" required placeholder="23.1400" />
                     </div>
                     <div class="form-group">
-                        <label for="place-lng">Долгота *</label>
-                        <span class="hint">От −180 до 180</span>
+                        <label for="place-lng" data-i18n="admin.lng">Долгота *</label>
+                        <span class="hint" data-i18n="admin.lngHint">От −180 до 180</span>
                         <input id="place-lng" type="number" step="any" min="-180" max="180" required placeholder="113.2644" />
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="place-address-local">Местный адрес</label>
-                    <span class="hint">Адрес на языке страны — его показывают таксисту</span>
+                    <label for="place-address-local" data-i18n="admin.addressLocal">Местный адрес</label>
+                    <span class="hint" data-i18n="admin.addressLocalHint">Адрес на языке страны — его показывают таксисту</span>
                     <input id="place-address-local" placeholder="广州市越秀区解放北路988号" />
                 </div>
 
                 <div class="form-group">
-                    <label for="place-desc">Описание</label>
-                    <textarea id="place-desc" placeholder="Чем это место стоит времени..."></textarea>
+                    <label for="place-desc" data-i18n="admin.desc">Описание</label>
+                    <textarea id="place-desc" data-i18n-attr="placeholder:admin.descPlaceholder"
+                              placeholder="Чем это место стоит времени..."></textarea>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="place-category">Категория</label>
+                        <label for="place-category" data-i18n="admin.category">Категория</label>
                         <select id="place-category">
-                            <option value="">— не указана —</option>
-                            <option value="еда">🍜 Еда</option>
-                            <option value="парк">🌳 Парк</option>
-                            <option value="музей">🏛️ Музей</option>
-                            <option value="смотровая">🌆 Смотровая</option>
-                            <option value="рынок">🛍️ Рынок</option>
-                            <option value="храм">⛩️ Храм</option>
-                            <option value="другое">📌 Другое</option>
+                            <option value="" data-i18n="admin.categoryNone">— не указана —</option>
+                            <!--
+                                Значение опции — это то, что уедет в базу; оно
+                                остаётся русским словом категории и не переводится.
+                                Переводится только подпись.
+                            -->
+                            <option value="еда" data-i18n="admin.cat.food">🍜 Еда</option>
+                            <option value="парк" data-i18n="admin.cat.park">🌳 Парк</option>
+                            <option value="музей" data-i18n="admin.cat.museum">🏛️ Музей</option>
+                            <option value="смотровая" data-i18n="admin.cat.view">🌆 Смотровая</option>
+                            <option value="рынок" data-i18n="admin.cat.market">🛍️ Рынок</option>
+                            <option value="храм" data-i18n="admin.cat.temple">⛩️ Храм</option>
+                            <option value="другое" data-i18n="admin.cat.other">📌 Другое</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="place-minutes">Сколько занимает, мин</label>
+                        <label for="place-minutes" data-i18n="admin.minutes">Сколько занимает, мин</label>
                         <input id="place-minutes" type="number" min="1" placeholder="90" />
                     </div>
                     <div class="form-group">
-                        <label for="place-price">Уровень цены</label>
+                        <label for="place-price" data-i18n="admin.price">Уровень цены</label>
                         <select id="place-price">
-                            <option value="">— не указан —</option>
-                            <option value="0">Бесплатно</option>
+                            <option value="" data-i18n="admin.priceNone">— не указан —</option>
+                            <option value="0" data-i18n="place.free">Бесплатно</option>
                             <option value="1">₽</option>
                             <option value="2">₽₽</option>
                             <option value="3">₽₽₽</option>
@@ -119,15 +135,15 @@
                     </div>
                 </div>
 
-                <button type="submit" class="admin-btn admin-btn-primary">➕ Добавить место</button>
+                <button type="submit" class="admin-btn admin-btn-primary" data-i18n="admin.addPlace">➕ Добавить место</button>
                 <div id="place-form-message" role="status" aria-live="polite"></div>
             </form>
         </div>
 
         <div class="card">
-            <h2>📋 Места</h2>
+            <h2 data-i18n="admin.placesList">📋 Места</h2>
             <div class="form-group" style="max-width:320px">
-                <label for="places-filter-city">Показать город</label>
+                <label for="places-filter-city" data-i18n="admin.filterCity">Показать город</label>
                 <select id="places-filter-city"></select>
             </div>
             <div id="places-list"></div>
@@ -137,20 +153,41 @@
     <!-- ---------------------------------------------------------------- -->
     <section id="tab-cities" class="hidden">
         <div class="card">
-            <h2>📋 Города</h2>
-            <p class="admin-sub">
+            <h2 data-i18n="admin.citiesList">📋 Города</h2>
+            <p class="admin-sub" data-i18n="admin.citiesNote">
                 Справочник городов — внутренние данные проекта. По брифу он правится
                 администратором, поэтому форма добавления здесь появится вместе
                 со входом. Сейчас города заводятся через интерфейс Supabase.
             </p>
             <div id="cities-list"></div>
         </div>
+
+        <div class="card">
+            <h2 data-i18n="admin.reference.title">🌍 Справочник стран и городов</h2>
+            <p class="admin-sub" data-i18n="admin.reference.note">
+                Справочник заливается порциями и переживает обрыв: загрузчик
+                спрашивает базу, что уже на месте, и продолжает с непройденного.
+                Эта метка отвечает на вопрос «доехало или нет» без запроса к агенту.
+            </p>
+            <div id="geo-reference-progress"></div>
+        </div>
+
+        <div class="card">
+            <h2 data-i18n="admin.geoNames.title">🈯 Написания городов</h2>
+            <p class="admin-sub" data-i18n="admin.geoNames.note">
+                Справочник городов приходит латиницей. Написания на языках интерфейса
+                собираются слоями: широкий слой из Natural Earth заливается целиком,
+                точечный — медленно дозаполняется из OpenStreetMap для тех городов,
+                которые действительно понадобились.
+            </p>
+            <div id="geo-names-progress"></div>
+        </div>
     </section>
 
     <!-- ---------------------------------------------------------------- -->
     <section id="tab-routes" class="hidden">
         <div class="card">
-            <h2>📋 Маршруты</h2>
+            <h2 data-i18n="admin.routesList">📋 Маршруты</h2>
             <div id="routes-list"></div>
         </div>
     </section>
@@ -159,26 +196,37 @@
 <!-- Версия зафиксирована: плавающий «@2» однажды приедет с ломающей правкой. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0"></script>
 <script src="assets/js/config.js"></script>
+<script src="assets/js/geo.js"></script>
 <script src="assets/js/dom.js"></script>
+<script src="assets/js/i18n-strings.js"></script>
+<script src="assets/js/i18n.js"></script>
 <script src="assets/js/api.js"></script>
 <script>
     (function () {
         'use strict';
 
         const dom = NF.dom;
+        const t = NF.i18n.t;
         let cities = [];
+        let activeTab = 'places';
 
         // --- Вкладки -------------------------------------------------------
 
         function switchTab(name) {
+            activeTab = name;
             document.querySelectorAll('.tabs button').forEach(function (button) {
                 button.setAttribute('aria-selected', String(button.dataset.tab === name));
             });
             ['places', 'cities', 'routes'].forEach(function (tab) {
                 document.getElementById('tab-' + tab).classList.toggle('hidden', tab !== name);
             });
-            if (name === 'cities') loadCities();
-            if (name === 'routes') loadRoutes();
+            reloadActiveTab();
+        }
+
+        function reloadActiveTab() {
+            if (activeTab === 'places') loadPlaces();
+            if (activeTab === 'cities') loadCities();
+            if (activeTab === 'routes') loadRoutes();
         }
 
         // Обработчики навешиваются кодом, а не атрибутами onclick:
@@ -196,43 +244,55 @@
 
         // --- Города --------------------------------------------------------
 
-        async function loadCityOptions() {
-            cities = await NF.api.listCities();
-
+        /**
+         * Наполняет оба выпадающих списка городов.
+         *
+         * Выбранное значение сохраняется и возвращается: список пересобирается
+         * ещё и при смене языка, и сброс фильтра в этот момент выглядел бы
+         * как самопроизвольная потеря выбора.
+         */
+        function fillCitySelects() {
             const selects = [
                 document.getElementById('place-city'),
                 document.getElementById('places-filter-city'),
             ];
 
             selects.forEach(function (select) {
+                const chosen = select.value;
                 dom.clear(select);
-                select.append(dom.el('option', { attrs: { value: '' }, text: '— выберите город —' }));
+                select.append(dom.el('option', { attrs: { value: '' }, text: t('admin.chooseCity') }));
                 cities.forEach(function (city) {
                     select.append(dom.el('option', {
                         attrs: { value: city.id },
                         text: city.name + (city.name_local ? ' (' + city.name_local + ')' : ''),
                     }));
                 });
+                select.value = chosen;
             });
+        }
+
+        async function loadCityOptions() {
+            cities = await NF.api.listCities();
+            fillCitySelects();
         }
 
         async function loadCities() {
             const container = document.getElementById('cities-list');
-            dom.loading(container, 'Загружаем города…');
+            dom.loading(container, t('cities.loading'));
             try {
                 if (cities.length === 0) cities = await NF.api.listCities();
                 if (cities.length === 0) {
-                    dom.empty(container, 'Городов нет', 'Добавь город через интерфейс Supabase.');
+                    dom.empty(container, t('admin.noCitiesTitle'), t('admin.noCitiesText'));
                     return;
                 }
                 dom.replace(container, table(
-                    ['Название', 'Местное', 'Страна'],
+                    [t('admin.col.name'), t('admin.col.local'), t('admin.col.country')],
                     cities.map(function (city) {
                         return [city.name, dom.value(city.name_local, '—'), dom.value(city.country, '—')];
                     })
                 ));
             } catch (error) {
-                dom.failure(container, 'Не удалось загрузить города.', error);
+                dom.failure(container, t('admin.citiesFailure'), error);
             }
         }
 
@@ -241,7 +301,7 @@
         function table(headers, rows, actions) {
             const head = dom.el('tr', {}, headers.map(function (h) {
                 return dom.el('th', { text: h });
-            }).concat(actions ? [dom.el('th', { text: 'Действия' })] : []));
+            }).concat(actions ? [dom.el('th', { text: t('admin.col.actions') })] : []));
 
             const body = rows.map(function (cells, index) {
                 // append() в dom.js сам различает строку и узел: строка становится
@@ -264,20 +324,21 @@
             const cityId = document.getElementById('places-filter-city').value;
 
             if (!cityId) {
-                dom.empty(container, 'Выберите город', 'Места показываются по одному городу.');
+                dom.empty(container, t('admin.pickCityTitle'), t('admin.pickCityText'));
                 return;
             }
 
-            dom.loading(container, 'Загружаем места…');
+            dom.loading(container, t('places.loading'));
             try {
                 const places = await NF.api.listPlaces(cityId);
                 if (places.length === 0) {
-                    dom.empty(container, 'Мест нет', 'Добавь первое место формой выше.');
+                    dom.empty(container, t('admin.noPlacesTitle'), t('admin.noPlacesText'));
                     return;
                 }
 
                 dom.replace(container, table(
-                    ['Название', 'Координаты', 'Категория', 'Время'],
+                    [t('admin.col.name'), t('admin.col.coords'),
+                     t('admin.col.category'), t('admin.col.time')],
                     places.map(function (place) {
                         return [
                             dom.el('div', {}, [
@@ -288,31 +349,31 @@
                             ]),
                             place.lat.toFixed(4) + ', ' + place.lng.toFixed(4),
                             dom.value(place.category, '—'),
-                            place.visit_minutes ? place.visit_minutes + ' мин' : '—',
+                            place.visit_minutes ? t('unit.minutes', { n: place.visit_minutes }) : '—',
                         ];
                     }),
                     function (index) {
                         return dom.el('button', {
                             class: 'admin-btn admin-btn-danger',
                             text: '🗑️',
-                            attrs: { type: 'button', title: 'Удалить место' },
+                            attrs: { type: 'button', title: t('admin.deleteTitle') },
                             on: { click: function () { removePlace(places[index]); } },
                         });
                     }
                 ));
             } catch (error) {
-                dom.failure(container, 'Не удалось загрузить места.', error);
+                dom.failure(container, t('admin.placesFailure'), error);
             }
         }
 
         async function removePlace(place) {
-            if (!window.confirm('Удалить место «' + place.name + '»?')) return;
+            if (!window.confirm(t('admin.confirmDelete', { name: place.name }))) return;
             try {
                 await NF.api.deletePlace(place.id);
                 loadPlaces();
             } catch (error) {
                 console.error('Не удалось удалить место:', error);
-                window.alert('Не удалось удалить место. Подробности в консоли.');
+                window.alert(t('admin.deleteFailed'));
             }
         }
 
@@ -329,6 +390,21 @@
             return raw === '' ? null : raw;
         }
 
+        /**
+         * Проверка повторяет ограничения базы. База — источник истины,
+         * но понятное сообщение здесь лучше, чем ошибка PostgREST.
+         * Возвращает ключ первой найденной беды или null.
+         */
+        function placeProblem(cityId, name, lat, lng, minutes) {
+            if (!cityId) return 'admin.needCity';
+            if (!name) return 'admin.needName';
+            if (lat === null || lng === null) return 'admin.needCoords';
+            if (lat < -90 || lat > 90) return 'admin.badLat';
+            if (lng < -180 || lng > 180) return 'admin.badLng';
+            if (minutes !== null && minutes <= 0) return 'admin.badMinutes';
+            return null;
+        }
+
         async function addPlace(event) {
             event.preventDefault();
 
@@ -339,21 +415,10 @@
             const name = textOrNull('place-name');
             const lat = numberOrNull('place-lat');
             const lng = numberOrNull('place-lng');
-
-            // Проверка повторяет ограничения базы. База — источник истины,
-            // но понятное сообщение здесь лучше, чем ошибка PostgREST.
-            if (!cityId) return message(box, 'Выберите город', true);
-            if (!name) return message(box, 'Введите название места', true);
-            if (lat === null || lng === null) {
-                return message(box, 'Координаты обязательны: без них место не попадёт в план', true);
-            }
-            if (lat < -90 || lat > 90) return message(box, 'Широта должна быть от −90 до 90', true);
-            if (lng < -180 || lng > 180) return message(box, 'Долгота должна быть от −180 до 180', true);
-
             const minutes = numberOrNull('place-minutes');
-            if (minutes !== null && minutes <= 0) {
-                return message(box, 'Время посещения должно быть больше нуля', true);
-            }
+
+            const problem = placeProblem(cityId, name, lat, lng, minutes);
+            if (problem) return message(box, t(problem), true);
 
             const price = document.getElementById('place-price').value;
 
@@ -374,15 +439,15 @@
                     is_published: true,
                 });
 
-                message(box, '✅ Место добавлено', false);
+                message(box, t('admin.added'), false);
                 event.target.reset();
                 document.getElementById('places-filter-city').value = cityId;
                 loadPlaces();
             } catch (error) {
                 console.error('Не удалось добавить место:', error);
                 message(box, error && error.code === 'NO_SESSION'
-                    ? 'Запись закрыта: нужен вход. Заводи место через интерфейс Supabase.'
-                    : 'Не удалось добавить место. Подробности в консоли браузера.', true);
+                    ? t('admin.addNoSession')
+                    : t('admin.addFailed'), true);
             } finally {
                 button.disabled = false;
             }
@@ -392,7 +457,7 @@
 
         async function loadRoutes() {
             const container = document.getElementById('routes-list');
-            dom.loading(container, 'Загружаем маршруты…');
+            dom.loading(container, t('admin.loadingRoutes'));
             try {
                 if (cities.length === 0) cities = await NF.api.listCities();
 
@@ -408,12 +473,12 @@
                 const all = perCity.flat();
 
                 if (all.length === 0) {
-                    dom.empty(container, 'Маршрутов нет', null);
+                    dom.empty(container, t('admin.noRoutes'), null);
                     return;
                 }
 
                 dom.replace(container, table(
-                    ['Название', 'Город', 'Дней'],
+                    [t('admin.col.name'), t('admin.col.city'), t('admin.col.days')],
                     all.map(function (item) {
                         return [
                             item.route.name,
@@ -423,7 +488,114 @@
                     })
                 ));
             } catch (error) {
-                dom.failure(container, 'Не удалось загрузить маршруты.', error);
+                dom.failure(container, t('admin.routesFailure'), error);
+            }
+        }
+
+        // --- Справочник: метка заливки ---------------------------------------
+
+        /** «1606 из 9045 (18%)» — без ожидаемого числа загруженное ни о чём не говорит. */
+        function ofExpected(loaded, expected) {
+            const share = expected > 0 ? Math.round((loaded / expected) * 100) : 0;
+            return NF.i18n.n(loaded) + ' / ' + NF.i18n.n(expected) + ' (' + NF.i18n.n(share) + '%)';
+        }
+
+        /**
+         * Сколько справочника доехало.
+         *
+         * Ожидаемые числа берутся из NF.config, а не из базы: база знает только
+         * то, что в неё уже попало, и на вопрос «сколько осталось» ответить
+         * не может.
+         */
+        async function loadReferenceProgress() {
+            const container = document.getElementById('geo-reference-progress');
+            dom.loading(container, t('state.loading'));
+            try {
+                const progress = await NF.api.referenceProgress();
+                const expected = NF.config.REFERENCE_EXPECTED;
+                const countries = Number((progress && progress.countries) || 0);
+                const cities = Number((progress && progress.cities) || 0);
+
+                dom.replace(container, dom.el('ul', { class: 'admin-sub' }, [
+                    fact(t('admin.reference.countries'), ofExpected(countries, expected.countries)),
+                    fact(t('admin.reference.cities'), ofExpected(cities, expected.cities)),
+                    fact(
+                        t('admin.reference.withOutline'),
+                        NF.i18n.n(Number((progress && progress.countries_with_outline) || 0))
+                    ),
+                    fact(
+                        t('admin.reference.covered'),
+                        NF.i18n.n(Number((progress && progress.countries_with_cities) || 0))
+                    ),
+                    fact(
+                        t('admin.reference.smallest'),
+                        progress && progress.smallest_city
+                            ? NF.i18n.n(Number(progress.smallest_city))
+                            : '—'
+                    ),
+                ]));
+            } catch (error) {
+                dom.failure(container, t('admin.reference.failure'), error);
+            }
+        }
+
+        // --- Написания городов: метка прогресса -----------------------------
+
+        /**
+         * Строка «метка: значение». Отдельной функцией, потому что таких
+         * строк шесть и собирать их по месту — это шесть шансов забыть
+         * про NF.dom и написать разметку строкой.
+         */
+        function fact(label, text) {
+            return dom.el('li', { text: label + ': ' + text });
+        }
+
+        /** «ru 3862 · en 3862 · …» в порядке переключателя языков. */
+        function perLanguageLine(perLanguage) {
+            const counts = perLanguage || {};
+            const parts = NF.i18n.LANGS
+                .filter(function (lang) { return counts[lang.code]; })
+                .map(function (lang) { return lang.code + ' ' + NF.i18n.n(counts[lang.code]); });
+            return parts.length > 0 ? parts.join(' · ') : '—';
+        }
+
+        /**
+         * Сколько городов уже с написаниями и сколько осталось.
+         *
+         * Дозаполнение идёт медленно и порциями, поэтому у владельца должна
+         * быть видимая точка, в которой сразу понятно, движется ли оно вообще.
+         */
+        async function loadGeoNames() {
+            const container = document.getElementById('geo-names-progress');
+            dom.loading(container, t('state.loading'));
+            try {
+                const progress = await NF.api.cityNamesProgress();
+                const total = Number((progress && progress.total) || 0);
+
+                if (total === 0) {
+                    dom.empty(container, t('admin.geoNames.empty'), null);
+                    return;
+                }
+
+                const withNames = Number(progress.with_names || 0);
+                const share = Math.round((withNames / total) * 100);
+                const checked = progress.last_checked_at;
+
+                dom.replace(container, dom.el('ul', { class: 'admin-sub' }, [
+                    fact(t('admin.geoNames.total'), NF.i18n.n(total)),
+                    fact(t('admin.geoNames.withNames'), NF.i18n.n(withNames) + ' (' + NF.i18n.n(share) + '%)'),
+                    fact(t('admin.geoNames.untried'), NF.i18n.n(Number(progress.untried || 0))),
+                    fact(t('admin.geoNames.emptyResult'), NF.i18n.n(Number(progress.empty_result || 0))),
+                    fact(
+                        t('admin.geoNames.lastChecked'),
+                        checked
+                            ? new Date(checked).toLocaleString(NF.i18n.lang())
+                            : t('admin.geoNames.never')
+                    ),
+                    fact(t('admin.geoNames.byLanguage'), perLanguageLine(progress.per_language)),
+                ]));
+            } catch (error) {
+                dom.failure(container, t('admin.geoNames.failure'), error);
             }
         }
 
@@ -450,16 +622,27 @@
             const submit = document.querySelector('#place-form button[type="submit"]');
 
             if (userId) {
-                state.textContent = 'Сейчас: вход выполнен, запись своих записей разрешена.';
+                state.textContent = t('admin.sessionIn');
                 return;
             }
 
-            state.textContent = 'Сейчас: входа нет, поэтому кнопка добавления выключена.';
+            state.textContent = t('admin.sessionOut');
             submit.disabled = true;
-            submit.setAttribute('title', 'Запись закрыта до появления входа');
+            submit.setAttribute('title', t('admin.writeClosed'));
+        }
+
+        /** Смена языка перерисовывает то, что собрано кодом: разметку правит apply(). */
+        function retranslate() {
+            fillCitySelects();
+            reloadActiveTab();
+            reflectSession();
         }
 
         document.addEventListener('DOMContentLoaded', async function () {
+            NF.i18n.apply(document);
+            NF.i18n.mountSwitcher(document.getElementById('lang-switcher'));
+            NF.i18n.onChange(retranslate);
+
             try {
                 await loadCityOptions();
             } catch (error) {
@@ -467,6 +650,16 @@
             }
             loadPlaces();
             reflectSession();
+        });
+
+        // Метка прогресса подключается отдельно от reloadActiveTab(): она не
+        // вкладка, а сводка, и живёт своим циклом. Запрос дешёвый — одна строка
+        // из представления, — поэтому считается сразу, а не по открытию вкладки.
+        document.addEventListener('DOMContentLoaded', function () {
+            loadReferenceProgress();
+            loadGeoNames();
+            NF.i18n.onChange(loadReferenceProgress);
+            NF.i18n.onChange(loadGeoNames);
         });
     })();
 </script>

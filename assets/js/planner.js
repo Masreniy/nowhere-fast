@@ -91,15 +91,9 @@ NF.planner = (function () {
         return String(a.id) < String(b.id) ? -1 : (String(a.id) > String(b.id) ? 1 : 0);
     }
     // --- Расстояние и время в пути -----------------------------------------
-    /** Расстояние по большому кругу, километры. Формула гаверсинуса. */
+    /** Расстояние по большому кругу, километры. Общий помощник — NF.geo. */
     function haversineKm(from, to) {
-        const rad = Math.PI / 180;
-        const dLat = (to.lat - from.lat) * rad;
-        const dLng = (to.lng - from.lng) * rad;
-        const h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(from.lat * rad) * Math.cos(to.lat * rad) *
-            Math.sin(dLng / 2) * Math.sin(dLng / 2);
-        return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(h)));
+        return NF.geo.betweenPoints(from, to);
     }
     /**
      * Время в пути в целых минутах — оценка, а не факт (A1). Делим на скорость,

@@ -20,6 +20,9 @@ file="$(python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("tool_i
 
 case "$file" in
     *node_modules*) exit 0 ;;
+    # Собранный движок глобуса править руками нельзя (ADR-0008): он машинный,
+    # и ругаться на него — значит приучать не читать сторожа.
+    *assets/vendor/*) exit 0 ;;
     *.js|*.html) ;;
     *) exit 0 ;;
 esac

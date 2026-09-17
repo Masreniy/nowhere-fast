@@ -55,3 +55,116 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+================================================================================
+Страница глобуса: библиотеки
+================================================================================
+
+Собраны в один файл assets/vendor/globe-engine.js (см. ADR-0008 и
+tools/globe/README.md). Исходники сборки — tools/globe/.
+
+  three            0.186.0   MIT   https://github.com/mrdoob/three.js
+  three-globe      2.45.2    MIT   https://github.com/vasturiano/three-globe
+  three-geojson-geometry
+                   2.1.1     MIT   https://github.com/vasturiano/three-geojson-geometry
+
+Вместе с three-globe в сборку попадают его зависимости: d3-*, kapsule,
+tween.js, earcut, three-conic-polygon-geometry, index-array-by, accessor-fn,
+data-bind-mapper, frame-ticker, tinycolor2 — все под MIT или ISC.
+
+================================================================================
+Страница глобуса: данные
+================================================================================
+
+Снимок поверхности, ночные огни и карта рельефа
+  Источник:  NASA Visible Earth, Blue Marble Next Generation
+             (через three-globe/example/img)
+  Лицензия:  общественное достояние; NASA просит указывать источник
+  Где лежит: assets/img/globe/earth.jpg, assets/img/globe/surface.jpg
+
+Очертания и коды стран
+  Источник:  Natural Earth (через пакет world-atlas)
+  Лицензия:  общественное достояние
+  Где лежит: таблица countries в Supabase
+
+Названия стран на десяти языках
+  Источник:  i18n-iso-countries
+  Лицензия:  MIT
+  Где лежит: таблица countries в Supabase
+
+Справочник городов
+  Источник:  GeoNames (через пакет all-the-cities)
+  Лицензия:  CC BY 4.0 — АТРИБУЦИЯ ОБЯЗАТЕЛЬНА
+  Где лежит: таблица geo_cities в Supabase
+  Обязательство: указание источника выведено в подвале публичных страниц
+                 и удалению не подлежит. См. ADR-0010 и критерий AC-009.
+
+Каталог звёзд и линии созвездий
+  Источник:  d3-celestial (данные Yale Bright Star Catalog, Stellarium)
+  Лицензия:  BSD-3-Clause
+  Где лежит: assets/data/globe-stars.js
+
+Места в городах
+  Источник:  OpenStreetMap
+  Лицензия:  ODbL — АТРИБУЦИЯ ОБЯЗАТЕЛЬНА
+  Обязательство: «© участники OpenStreetMap» в подвале. См. ADR-0006.
+
+================================================================================
+Написания городов на языках интерфейса
+================================================================================
+
+Справочник GeoNames через пакет all-the-cities отдаёт только латиницу: поле
+altName пусто у всех 135 233 записей пакета. При русском интерфейсе «Москва»
+в поиске не находится — находится «Moscow». Ограничение закрывается двумя
+слоями, у каждого своя лицензия и своё обязательство.
+
+Широкий слой: написания на десяти языках
+  Источник:  Natural Earth, слой 10m populated places (ne_10m_populated_places)
+             https://github.com/nvkelso/natural-earth-vector
+             Поля NAME_RU, NAME_EN, NAME_ZH, NAME_ES, NAME_AR, NAME_HI,
+             NAME_PT, NAME_FR, NAME_DE, NAME_JA и GEONAMESID
+  Лицензия:  общественное достояние. Дословно из LICENSE.md репозитория
+             (проверено 16.09.2026):
+             «All versions of Natural Earth raster + vector map data found on
+             this website are in the public domain. You may use the maps in any
+             manner, including modifying the content and design, electronic
+             dissemination, and offset printing.»
+             и отдельным разделом «Credits»:
+             «No permission is needed to use Natural Earth. Crediting the
+             authors is unnecessary.»
+  Обязаны:   ничего. Указываем добровольно — тем же источником взяты очертания
+             стран (ADR-0010). Рекомендуемая источником форма ссылки:
+             «Made with Natural Earth.»
+  Где лежит: geo_cities.names, строки с names_source = 'natural-earth'
+  Собирает:  tools/geo/build-city-names.js
+
+Точечный слой: дозаполнение по надобности
+  Источник:  Nominatim (OpenStreetMap), поле namedetails, ключи name:<язык>
+  Лицензия:  ODbL — АТРИБУЦИЯ ОБЯЗАТЕЛЬНА
+  Обязаны:  указывать источник. «© участники OpenStreetMap» уже выведено
+             в подвале публичных страниц по ADR-0006 и удалению не подлежит
+  Где лежит: geo_cities.names, строки с names_source = 'nominatim'
+  Собирает:  tools/geo/fill-city-names.js
+
+  ГРАНИЦА ИСПОЛЬЗОВАНИЯ. Условия публичного сервера Nominatim запрещают
+  систематический обход списков, а не только частые запросы. Дословно:
+  «Systematic queries This includes reverse queries in a grid, searching for
+  complete lists of postcodes, towns etc. and downloading all POIs in an area.»
+  и «No heavy uses (an absolute maximum of 1 request per second).» Поэтому
+  дозаполнитель ходит только за городами, которые продукту действительно
+  понадобились, порциями с потолком в 200 городов за запуск и паузой
+  в полторы секунды между запросами. Обход всех девяти тысяч городов
+  справочника не делается — даже медленно.
+
+Что проверено и НЕ взято
+  GeoNames alternateNames в перепаковке github.com/abdullahdevrel/geoname_altname:
+  покрытие шире (5308 городов из 9062), но на каждый язык оставлено одно
+  произвольное написание из многих, без учёта флагов isPreferredName /
+  isHistoric / isColloquial. Проверка на контрольных городах дала «Москвы»
+  вместо «Москва», «Edo» вместо «Tokyo», «Ville-Lumière» вместо «Paris»
+  и «Sampa» вместо «São Paulo». Плюс у репозитория нет файла лицензии.
+  Отвергнуто по качеству данных: неверное написание хуже отсутствующего.
+
+  CLDR (cldr-dates-full, exemplarCity часовых поясов), лицензия Unicode:
+  добавляет к слою Natural Earth ровно 3 города из 9062. Не взято за
+  ненадобностью, а не по лицензии.

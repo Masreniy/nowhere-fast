@@ -687,3 +687,61 @@ img { max-width: 100%; }
     .hero { padding: 56px 0 40px; }
     .hero-buttons .btn { width: 100%; }
 }
+
+/* --- Переключатель языка ------------------------------------------------ */
+/*
+    Язык — свойство всего проекта, поэтому переключатель стоит в шапке каждой
+    страницы и выглядит везде одинаково. Внутри обычный select: на телефоне он
+    открывается родным списком системы и работает с клавиатуры без нашего кода.
+
+    Отдельно про направление письма. Арабский переворачивает страницу целиком
+    (<html dir="rtl">), и всё, что прижато к краю, обязано прижаться к другому.
+    Логические свойства (margin-inline, padding-inline) делают это сами —
+    поэтому здесь нет ни margin-left, ни padding-right.
+*/
+
+.lang-switcher {
+    display: flex;
+    align-items: center;
+}
+
+.lang-select {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    min-height: 38px;
+    cursor: pointer;
+    transition: border-color var(--transition), color var(--transition);
+}
+
+.lang-select:hover { border-color: var(--color-primary); }
+
+.lang-select:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* В шапке переключатель идёт последним и не растягивается вместе с меню. */
+.header-inner .lang-switcher { flex: 0 0 auto; }
+
+/*
+    В админке шапки нет — переключатель стоит рядом с заголовком страницы.
+    Отступ логический: при rtl он сам переезжает на другую сторону.
+*/
+.admin-lang { margin-block: 0 24px; }
+
+@media (max-width: 768px) {
+    .header-inner .lang-switcher { justify-content: center; }
+}
+
+/*
+    Первая строка заголовка на главной стала отдельным узлом — иначе её
+    нечем пометить для перевода. Правило .hero h1 span выше красит любой span
+    внутри заголовка, а цветной в нём ровно один, второй.
+*/
+.hero h1 .hero-line { color: var(--color-text); }

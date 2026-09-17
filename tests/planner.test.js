@@ -20,6 +20,9 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const ROOT = path.join(__dirname, '..');
+// Общий помощник геометрии. Модуль от него зависит, поэтому в стенде
+// он загружается первым — как и на странице.
+const GEO_SOURCE = fs.readFileSync(path.join(ROOT, 'assets/js/geo.js'), 'utf8');
 const SOURCE = fs.readFileSync(path.join(ROOT, 'assets/js/planner.js'), 'utf8');
 
 /** Поднимает planner.js в песочнице без браузера. */
@@ -27,6 +30,7 @@ function load() {
     const sandbox = { console: console };
     sandbox.window = sandbox; // в браузере window и есть глобальный объект
     vm.createContext(sandbox);
+    vm.runInContext(GEO_SOURCE, sandbox);
     vm.runInContext(SOURCE, sandbox);
     return sandbox.NF.planner;
 }

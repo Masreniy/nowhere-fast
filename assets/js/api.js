@@ -251,6 +251,112 @@ NF.api = (function () {
         });
     }
 
+    // --- Справочник городов: написания на языках интерфейса ----------------
+
+    /**
+     * Сводка по дозаполнению написаний: сколько городов всего, у скольких
+     * есть написания, на скольких языках, сколько ещё не спрашивали.
+     *
+     * Считает представление в базе, а не браузер: иначе ради четырёх чисел
+     * пришлось бы выкачать девять тысяч строк справочника.
+     */
+    /**
+     * Справочник стран целиком: глобусу нужны все сразу, иначе нечего рисовать.
+     *
+     * Контур приходит полем `outline` — координаты MultiPolygon. Он тяжёлый,
+     * но без него не нарисовать ни границы, ни подъём выбранной страны.
+     */
+    async function listCountries() {
+        const { data, error } = await client
+            .from('countries')
+            .select('code, names, lat, lng, spread, land_share, outline')
+            .order('code');
+        if (error) fail(error);
+        return data || [];
+    }
+
+    /**
+     * Справочник городов от заданного числа жителей.
+     *
+     * Порог — параметр, а не константа: глобусу нужны крупные, поиску нужны
+     * все. Поле `names` держит написания на языках интерфейса и заполнено
+     * не у всех — у остальных остаётся латинское `name` (ADR-0010).
+     */
+    async function listGeoCities(minPopulation) {
+        const floor = Number(minPopulation) > 0 ? Number(minPopulation) : 0;
+        const { data, error } = await client
+            .from('geo_cities')
+            // Колонка names здесь не запрашивается намеренно: в ней десять
+            // языков, человеку нужен один, и разница после сжатия — 260 КБ
+            // против 42. Один нужный язык приходит отдельно, listCityNames().
+            .select('geoname_id, name, country_code, lat, lng, population')
+            .gte('population', floor)
+            .order('population', { ascending: false });
+        if (error) fail(error);
+        return data || [];
+    }
+
+    /**
+     * Города, у которых в продукте есть содержание.
+     *
+     * Их глобус отмечает на шаре и ведёт с них на city.html. Города без
+     * координат отбрасываются здесь, а не на странице: поставить на шар
+     * их всё равно некуда, а лишняя проверка в двух местах разъезжается.
+     */
+    async function listCitiesWithContent() {
+        const { data, error } = await client
+            .from('cities')
+            .select('id, name, name_local, country, country_code, lat, lng')
+            .not('lat', 'is', null)
+            .not('lng', 'is', null)
+            .order('name');
+        if (error) fail(error);
+        return data || [];
+    }
+
+    /**
+     * Написания городов на одном языке: { geoname_id, local_name }.
+     *
+     * Через функцию базы, а не выборкой колонки: см. комментарий
+     * в listGeoCities. Язык проверяется по списку NF.i18n.LANGS — не потому,
+     * что иначе возможна инъекция (это параметр запроса, а не склейка строк),
+     * а потому что опечатка в коде языка тихо вернула бы пустой список,
+     * и страница осталась бы латиницей без единого признака поломки.
+     */
+    async function listCityNames(lang) {
+        const known = NF.i18n && NF.i18n.LANGS.some(function (item) {
+            return item.code === lang;
+        });
+        if (!known) {
+            throw new Error('неизвестный код языка: ' + lang);
+        }
+        const { data, error } = await client.rpc('geo_city_names', { lang: lang });
+        if (error) fail(error);
+        return data || [];
+    }
+
+    async function cityNamesProgress() {
+        const { data, error } = await client
+            .from('geo_city_names_progress')
+            .select('total, with_names, untried, empty_result, last_checked_at, per_language')
+            .maybeSingle();
+        if (error) fail(error);
+        return data;
+    }
+
+    /**
+     * Сводка заливки справочника: сколько стран и городов доехало.
+     * Считает база — тянуть девять тысяч строк в браузер ради двух чисел незачем.
+     */
+    async function referenceProgress() {
+        const { data, error } = await client
+            .from('geo_reference_progress')
+            .select('countries, countries_with_outline, cities, countries_with_cities, smallest_city')
+            .maybeSingle();
+        if (error) fail(error);
+        return data;
+    }
+
     return {
         client: client,
         listCities: listCities,
@@ -261,5 +367,11 @@ NF.api = (function () {
         createPlace: createPlace,
         deletePlace: deletePlace,
         listRoutes: listRoutes,
+        cityNamesProgress: cityNamesProgress,
+        referenceProgress: referenceProgress,
+        listCountries: listCountries,
+        listGeoCities: listGeoCities,
+        listCityNames: listCityNames,
+        listCitiesWithContent: listCitiesWithContent,
     };
 })();

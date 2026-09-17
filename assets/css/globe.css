@@ -1,0 +1,789 @@
+/**
+ * Оформление страницы глобуса.
+ *
+ * Перенесено из прототипа (scratchpad/globe/src/template.html), а не сочинено
+ * заново: там выстрадан вид полноэкранной сцены — два шрифта, тёплый белый
+ * вместо чистого, плавающие стеклянные блоки, разрядка у служебных надписей.
+ * Имена классов наши, значения — прототипа.
+ *
+ * Подключается ПОСЛЕ app.css. Светлая тема проекта гасится внутри .globe-page:
+ * глобальный :root не трогается, остальные страницы остаются светлыми.
+ *
+ * Отличия от прототипа — три, каждое с причиной на месте:
+ * карточка не fixed на узком экране, подписи масштабируются на 4K,
+ * добавлена строка атрибуции (AC-009).
+ */
+
+.globe-page {
+    /* --- Палитра прототипа ------------------------------------------- */
+    --ink: #f4f1ea;          /* основной текст: тёплый белый, а не #fff */
+    --ink-dim: #9aa3b2;
+    --ink-faint: #5d6675;
+    --amber: #ffc46b;        /* акцент */
+    --mint: #7ef0c0;         /* точка отсчёта */
+    --line: rgba(255, 255, 255, 0.11);
+    --line-strong: rgba(255, 255, 255, 0.22);
+    --glass: rgba(10, 14, 24, 0.66);
+    --glass-solid: rgba(8, 11, 20, 0.94);
+    --void: #03040a;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+    --display: 'Instrument Serif', 'Playfair Display', Georgia, serif;
+    --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    /*
+        Размеры прототипа, но не намертво в пикселях: на 4K-панели 10 px
+        превращаются в нечитаемую пыль. Каждый токен равен своему исходному
+        значению на обычном экране (высота 900) и растёт только выше него.
+        Нижняя граница clamp удерживает ровно прототипный размер на телефоне.
+    */
+    --g-xs: clamp(10.5px, 0.42vmin + 6.72px, 15.5px);
+    --g-sm: clamp(11.5px, 0.46vmin + 7.36px, 17px);
+    --g-md: clamp(12.5px, 0.5vmin + 8px, 18.5px);
+    --g-lg: clamp(13px, 0.52vmin + 8.32px, 19.5px);
+    --g-lead: clamp(14px, 0.56vmin + 8.96px, 21px);
+    --g-label: clamp(19px, 0.76vmin + 12.16px, 28px);
+    --g-name: clamp(28px, 1.12vmin + 17.92px, 42px);
+
+    height: 100%;
+    background: var(--void);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-weight: 400;
+    line-height: 1.5;
+    /* Полотно не прокручивается: сцена и есть страница. */
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+html:has(.globe-page) { height: 100%; }
+
+/* display:flex и подобные перебивают штатное [hidden] { display: none }.
+   В прототипе на этом уже споткнулись: скрытый чип оставался пустой таблеткой. */
+.globe-page [hidden] { display: none !important; }
+
+/* Без этого при навигации с клавиатуры не видно, где фокус. */
+.globe-page :focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+.globe-page a { color: inherit; }
+
+/* --- Сцена --------------------------------------------------------------- */
+
+.globe-stage { position: fixed; inset: 0; }
+
+#globe-scene {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+    touch-action: none; cursor: grab;
+}
+
+#globe-scene:active { cursor: grabbing; }
+
+.globe-veil {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: linear-gradient(90deg,
+        rgba(2, 3, 8, 0.92) 0%, rgba(2, 3, 8, 0.6) 24%,
+        transparent 44%, transparent 74%, rgba(2, 3, 8, 0.5) 100%);
+}
+
+/* --- Подписи поверх сцены ------------------------------------------------- */
+
+.globe-labels { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+
+.globe-label {
+    position: absolute;
+    top: 0; left: 0;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s var(--ease);
+    text-shadow: 0 1px 12px rgba(0, 0, 0, 0.95);
+}
+
+.globe-label--origin {
+    font-size: var(--g-xs); letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--mint);
+}
+
+.globe-label--target {
+    font-family: var(--display); font-weight: 400;
+    font-size: var(--g-label);
+    color: var(--amber);
+}
+
+.globe-label--own {
+    font-size: var(--g-sm); letter-spacing: 0.04em; font-weight: 500;
+    color: rgba(255, 233, 200, 0.95);
+}
+
+.globe-label--near {
+    font-size: var(--g-xs); letter-spacing: 0.06em;
+    color: rgba(226, 236, 248, 0.72);
+}
+
+.globe-label--sky {
+    font-size: var(--g-xs); letter-spacing: 0.22em; text-transform: uppercase;
+    color: rgba(255, 233, 196, 0.85);
+}
+
+.globe-label--star {
+    font-size: var(--g-xs); letter-spacing: 0.14em;
+    color: rgba(178, 202, 236, 0.5);
+}
+
+/* Днём с земли звёзд не видно — значит и подписей быть не должно. */
+.globe-label--star,
+.globe-label--sky { opacity: calc(var(--sky-fade, 1) * 1); }
+
+/*
+    Отметка города, который уже есть в продукте. На первой странице это
+    главное: без неё шар выглядит красивым, но пустым — непонятно, куда
+    вообще можно пойти. Единственный элемент слоя подписей, который ловит клики.
+*/
+.globe-pin {
+    position: absolute;
+    top: 0; left: 0;
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 5px 12px 5px 8px;
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 196, 107, 0.45); border-radius: 999px;
+    color: var(--ink);
+    font-family: var(--sans); font-size: var(--g-sm); letter-spacing: 0.04em;
+    white-space: nowrap;
+    cursor: pointer; pointer-events: auto;
+    opacity: 0;
+    transition: opacity 0.3s var(--ease), border-color 0.25s var(--ease);
+}
+
+.globe-pin:hover { border-color: var(--amber); }
+
+.globe-pin__dot {
+    width: 6px; height: 6px; flex: none;
+    border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 10px var(--amber);
+}
+
+/* --- Каркас интерфейса ---------------------------------------------------- */
+
+.globe-ui {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 16px;
+    padding: clamp(18px, 2.6vw, 36px);
+    pointer-events: none;
+}
+
+.globe-ui button,
+.globe-ui input,
+.globe-ui select,
+.globe-ui a,
+.globe-ui .globe-card,
+.globe-ui .globe-results { pointer-events: auto; }
+
+.globe-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+
+/* --- Логотип ---------------------------------------------------------------- */
+
+.globe-brand { display: flex; align-items: baseline; gap: 10px; text-decoration: none; }
+
+.globe-brand__mark {
+    width: 7px; height: 7px; flex: none;
+    border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 14px var(--amber);
+    transform: translateY(-2px);
+}
+
+.globe-brand__name,
+.globe-brand__sub {
+    display: block;
+    text-transform: uppercase;
+}
+
+.globe-brand__name { font-size: var(--g-md); letter-spacing: 0.34em; }
+.globe-brand__sub { font-size: var(--g-xs); letter-spacing: 0.18em; color: var(--ink-faint); }
+
+/* --- Плавающие блоки управления ------------------------------------------- */
+
+.globe-tools {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.globe-control,
+.globe-page .lang-select {
+    padding: 9px 14px;
+    min-height: 0;
+    background: var(--glass);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--line); border-radius: 999px;
+    color: var(--ink);
+    font-family: var(--sans); font-size: var(--g-md); font-weight: 400;
+    outline: none; cursor: pointer;
+    transition: border-color 0.25s var(--ease), color 0.25s var(--ease);
+}
+
+.globe-control:hover,
+.globe-page .lang-select:hover { border-color: var(--line-strong); }
+
+/*
+    Переключатель языка приходит из общего слоя обычным select. Здесь ему
+    возвращают вид плавающего блока и свою стрелку: родная в тёмной таблетке
+    выглядит чужеродно. Обёртку рисует NF.i18n, класс её — .lang-switcher.
+*/
+.globe-page .lang-select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-inline-end: 30px;
+}
+
+.globe-page .lang-switcher { position: relative; }
+
+.globe-page .lang-switcher::after {
+    content: '';
+    position: absolute;
+    inset-inline-end: 13px;
+    top: 50%;
+    width: 5px; height: 5px;
+    margin-top: -4px;
+    border-right: 1.3px solid var(--ink-dim);
+    border-bottom: 1.3px solid var(--ink-dim);
+    transform: rotate(45deg);
+    pointer-events: none;
+}
+
+.globe-control[aria-pressed="true"] {
+    color: var(--amber);
+    border-color: rgba(255, 196, 107, 0.45);
+}
+
+/* Компас: стрелка показывает, куда сейчас повёрнут кадр. */
+.globe-control--compass { display: inline-flex; align-items: center; gap: 8px; }
+
+.globe-compass {
+    position: relative;
+    width: 14px; height: 14px; flex: none;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+}
+
+.globe-compass i {
+    position: absolute;
+    left: 50%; top: 1px;
+    width: 0; height: 0;
+    margin-left: -2.5px;
+    border-left: 2.5px solid transparent;
+    border-right: 2.5px solid transparent;
+    border-bottom: 6px solid var(--amber);
+    transform-origin: 50% 6px;
+}
+
+/* --- Поиск ------------------------------------------------------------------ */
+
+.globe-search { position: relative; width: min(280px, 44vw); }
+
+.globe-search__input { width: 100%; padding-left: 34px; cursor: text; }
+.globe-search__input::placeholder { color: var(--ink-faint); }
+.globe-search__input:focus { border-color: rgba(255, 196, 107, 0.5); }
+
+.globe-search::before {
+    content: '';
+    position: absolute;
+    left: 13px; top: 50%;
+    width: 10px; height: 10px;
+    margin-top: -7px;
+    border: 1.3px solid var(--ink-faint);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.globe-results {
+    position: absolute;
+    top: calc(100% + 8px);
+    inset-inline: 0;
+    z-index: 5;
+    max-height: 60vh; overflow-y: auto;
+    background: var(--glass-solid);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid var(--line); border-radius: 14px;
+}
+
+.globe-result {
+    display: flex;
+    width: 100%;
+    align-items: baseline;
+    gap: 12px;
+    padding: 9px 14px;
+    background: none; border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--ink);
+    font-family: var(--sans); font-size: var(--g-lg);
+    text-align: start;
+    cursor: pointer;
+}
+
+/* Название тянется, отметка слева, страна прижата вправо. */
+.globe-result > span:first-of-type { flex: 1 1 auto; }
+
+.globe-result:last-child { border-bottom: 0; }
+.globe-result.is-active,
+.globe-result:hover { background: rgba(255, 196, 107, 0.12); }
+.globe-result__meta { color: var(--ink-faint); font-size: var(--g-xs); }
+
+/*
+    Точка у строки означает «сюда уже можно поехать». Подпись к ней —
+    в атрибуте title, текстом на языке интерфейса: значок сам по себе
+    ничего не объясняет.
+*/
+.globe-result.is-product::before {
+    content: '';
+    width: 6px; height: 6px; flex: none;
+    align-self: center;
+    order: -1;
+    border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 10px var(--amber);
+}
+
+/* --- Середина: заголовок и карточка ----------------------------------------- */
+
+.globe-middle {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 28px;
+    /* min-height: 0 обязателен: иначе карточка растягивает строку сетки
+       и накрывает нижнюю панель, а на низком окне — и верхнюю тоже. */
+    min-height: 0;
+}
+
+.globe-hero {
+    max-width: 24ch;
+    pointer-events: none;
+    font-family: var(--display); font-weight: 400;
+    font-size: clamp(32px, 3.6vw, 54px);
+    line-height: 1.05; letter-spacing: -0.015em;
+}
+
+.globe-card {
+    width: min(330px, 84vw);
+    /*
+        Карточка ограничена высотой своей строки сетки и прокручивается сама.
+        Так она физически не может закрыть ни поиск сверху, ни ползунок снизу.
+    */
+    align-self: flex-start;
+    max-height: 100%;
+    overflow-y: auto;
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 20px;
+    transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+}
+
+/*
+    Скрытая карточка не убирается из потока, а гасится: иначе появление
+    происходит рывком, без перехода. Место она держит пустое — как в прототипе.
+*/
+.globe-page .globe-card[hidden] {
+    display: block !important;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateX(26px) scale(0.98);
+    pointer-events: none;
+}
+
+.globe-card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+
+.globe-card__ident { min-width: 0; }
+
+.globe-card__name {
+    font-family: var(--display); font-weight: 400;
+    font-size: var(--g-name);
+    line-height: 1.1;
+    word-break: break-word;
+}
+
+.globe-card__meta {
+    font-size: var(--g-xs); letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: 5px;
+}
+
+.globe-card__close {
+    flex: none;
+    width: 26px; height: 26px;
+    background: none;
+    border: 1px solid var(--line); border-radius: 50%;
+    color: var(--ink-dim);
+    font-size: 14px; line-height: 1;
+    cursor: pointer;
+}
+
+.globe-card__close:hover { color: var(--ink); }
+
+.globe-card__stats { margin: 16px 0 14px; }
+
+.globe-stat {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.globe-stat:last-child { border-bottom: 0; }
+.globe-stat__label { font-size: var(--g-sm); color: var(--ink-faint); }
+.globe-stat__value { font-size: var(--g-md); font-variant-numeric: tabular-nums; text-align: end; }
+
+.globe-nearby__title {
+    font-size: var(--g-xs); letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 14px 0 6px;
+}
+
+.globe-nearby__row {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 0;
+    background: none; border: 0;
+    color: var(--ink-dim);
+    font-family: var(--sans); font-size: var(--g-md);
+    text-align: start;
+    cursor: pointer;
+}
+
+.globe-nearby__row:hover { color: var(--ink); }
+.globe-nearby__km { font-variant-numeric: tabular-nums; color: var(--ink-faint); }
+
+.globe-card__actions { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+
+.globe-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 11px;
+    border: 0; border-radius: 999px;
+    background: var(--amber);
+    color: #1a1204;
+    font-family: var(--sans); font-size: var(--g-md); font-weight: 500;
+    text-align: center; text-decoration: none;
+    cursor: pointer;
+}
+
+.globe-cta--ghost {
+    background: none;
+    color: var(--mint);
+    border: 1px solid rgba(126, 240, 192, 0.35);
+}
+
+/*
+    Честный отказ вместо ссылки: города нет в продукте — и мы это говорим,
+    а не показываем кнопку в никуда (AC-003).
+*/
+.globe-card__note { font-size: var(--g-sm); line-height: 1.5; color: var(--ink-faint); }
+
+/* --- Низ: точка отсчёта, время, подсказки, атрибуция ------------------------ */
+
+/*
+    Счётчики держатся справа и не переносятся под строку атрибуции:
+    перенос уводил их в левый нижний угол поверх подсказок.
+*/
+.globe-bottom {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 20px;
+    flex-wrap: nowrap;
+}
+
+.globe-bottom__left {
+    display: flex; flex-direction: column; align-items: flex-start;
+    gap: 10px;
+    /* Строке атрибуции нужна вся свободная ширина, иначе она ломается на три. */
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.globe-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 13px;
+    background: var(--glass);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--line); border-radius: 999px;
+    font-family: var(--sans); font-size: var(--g-sm);
+    color: var(--ink-dim);
+    cursor: pointer;
+}
+
+.globe-chip__dot {
+    width: 6px; height: 6px; flex: none;
+    border-radius: 50%;
+    background: var(--mint);
+    box-shadow: 0 0 10px var(--mint);
+}
+
+.globe-chip__how { color: var(--ink-faint); font-size: var(--g-xs); }
+
+.globe-time {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: var(--g-xs);
+    color: var(--ink-faint);
+}
+
+.globe-time__label { letter-spacing: 0.16em; text-transform: uppercase; }
+
+.globe-time input[type="range"] {
+    width: clamp(180px, 14vw, 300px); height: 2px;
+    appearance: none; -webkit-appearance: none;
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 2px;
+    outline: none;
+}
+
+.globe-time input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: var(--amber);
+    cursor: pointer;
+}
+
+.globe-time input[type="range"]::-moz-range-thumb {
+    width: 11px; height: 11px;
+    border: 0; border-radius: 50%;
+    background: var(--amber);
+    cursor: pointer;
+}
+
+.globe-time__value { color: var(--ink-dim); font-variant-numeric: tabular-nums; min-width: 9ch; }
+
+.globe-time__now {
+    background: none; border: 0;
+    color: var(--ink-faint);
+    font-family: var(--sans); font-size: var(--g-xs);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.globe-hints,
+.globe-credits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    font-size: var(--g-xs);
+    color: var(--ink-faint);
+}
+
+/* Атрибуция — часть того же полотна, тем же тоном, что подсказки. */
+.globe-credits { width: 100%; line-height: 1.5; }
+.globe-credits a { text-decoration: underline; text-underline-offset: 2px; }
+.globe-credits a:hover { color: var(--ink-dim); }
+
+.globe-meters {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: 18px;
+    max-width: 46vw;
+    font-size: var(--g-xs); letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+}
+
+/* --- Список городов продукта ------------------------------------------------ */
+
+.globe-sheet {
+    position: absolute;
+    inset: 0;
+    z-index: 12;
+    display: grid; place-items: center;
+    padding: clamp(18px, 2.6vw, 36px);
+    background: rgba(2, 3, 8, 0.66);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.globe-sheet__box {
+    width: min(460px, 100%);
+    max-height: 100%; overflow-y: auto;
+    padding: 24px;
+    background: var(--glass-solid);
+    border: 1px solid var(--line); border-radius: 20px;
+}
+
+.globe-sheet__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+
+.globe-sheet__head h2 {
+    font-family: var(--display); font-weight: 400;
+    font-size: var(--g-name);
+    line-height: 1.1;
+}
+
+.globe-sheet__lead {
+    margin: 8px 0 16px;
+    font-size: var(--g-sm); line-height: 1.6;
+    color: var(--ink-faint);
+}
+
+.globe-city-row {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Название со страной занимает всё, что осталось от кнопок. Если места мало,
+   кнопки переносятся под него: иначе «КНР (Китайская Народная Республика)»
+   сползает в столбик по одному слову. */
+.globe-city-row > div:first-child { flex: 1 1 14em; min-width: 0; }
+
+.globe-city-row__name { font-size: var(--g-lg); }
+.globe-city-row__meta { font-size: var(--g-xs); color: var(--ink-faint); }
+.globe-city-row__actions { display: flex; gap: 8px; flex: none; }
+.globe-city-row .globe-cta { width: auto; padding: 8px 16px; }
+
+/* --- Заставка и экран отказа -------------------------------------------------- */
+
+.globe-boot {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: grid; place-content: center; justify-items: center;
+    gap: 16px;
+    background: var(--void);
+    transition: opacity 0.9s var(--ease);
+}
+
+.globe-boot__word {
+    font-size: var(--g-xs); letter-spacing: 0.4em; text-transform: uppercase;
+    color: var(--ink-faint);
+}
+
+.globe-boot__bar {
+    display: block;
+    width: 150px; height: 1px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+}
+
+.globe-boot__bar i {
+    display: block;
+    width: 40%; height: 100%;
+    background: var(--amber);
+    animation: globe-sweep 1.1s var(--ease) infinite;
+}
+
+@keyframes globe-sweep {
+    from { transform: translateX(-120%); }
+    to { transform: translateX(320%); }
+}
+
+.globe-fatal {
+    position: absolute;
+    inset: 0;
+    z-index: 90;
+    display: grid; place-content: center; justify-items: center;
+    gap: 14px;
+    padding: 32px;
+    text-align: center;
+    background: var(--void);
+}
+
+.globe-fatal h2 {
+    font-family: var(--display); font-weight: 400;
+    font-size: var(--g-label);
+    color: var(--ink);
+}
+
+.globe-fatal p {
+    max-width: 46ch;
+    font-size: var(--g-lg); line-height: 1.6;
+    color: var(--ink-dim);
+}
+
+.globe-fatal .globe-cta { width: auto; min-width: 220px; }
+
+/* --- Узкий экран --------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+    .globe-veil {
+        background: linear-gradient(180deg, transparent 34%, rgba(3, 4, 10, 0.9) 60%, var(--void) 76%);
+    }
+
+    .globe-top { flex-direction: column; align-items: stretch; gap: 12px; }
+    .globe-tools { justify-content: space-between; }
+    .globe-search { width: 100%; order: -1; }
+    .globe-brand__sub { display: none; }
+
+    /*
+        Отличие от прототипа. Там карточка на узком экране висела fixed над
+        нижней панелью и закрывала собой ползунок и подсказки. Здесь она
+        остаётся в потоке своей строки сетки: поиск сверху и управление
+        снизу продолжают работать.
+    */
+    .globe-middle { flex-direction: column; align-items: stretch; justify-content: flex-end; }
+    .globe-hero { max-width: none; font-size: clamp(26px, 7.4vw, 36px); }
+    .globe-card { width: auto; align-self: stretch; }
+    .globe-page .globe-card[hidden] { display: none !important; }
+    .globe-page.has-selection .globe-hero { display: none; }
+
+    .globe-meters { display: none; }
+    .globe-label--near,
+    .globe-label--star { display: none; }
+}
+
+/*
+    Низкое окно (например 1400×400): средняя строка не сжималась и выдавливала
+    за экран ползунок времени и подсказки, а прокрутки нет. Запрос по ширине
+    здесь не срабатывает. Строка атрибуции не прячется никогда — это лицензия,
+    а не украшение.
+*/
+@media (max-height: 620px) {
+    .globe-hints,
+    .globe-meters { display: none; }
+    .globe-hero { font-size: clamp(22px, 3.4vh, 34px); }
+    .globe-ui { gap: 10px; }
+}
+
+@media (max-height: 460px) {
+    .globe-hero { display: none; }
+}
+
+/* В режиме неба смотрят вверх, а не читают заголовок. */
+.globe-page.is-sky .globe-hero { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    .globe-page *,
+    .globe-page *::before,
+    .globe-page *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+    .globe-boot__bar i { width: 100%; opacity: 0.5; }
+}

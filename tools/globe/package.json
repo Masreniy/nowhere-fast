@@ -1,0 +1,24 @@
+{
+  "name": "nowhere-fast-globe-tools",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Сборка артефактов глобуса: бандл three + three-globe, текстуры Земли, каталог звёзд. В продакшен не попадает — в браузер уезжают только готовые файлы из assets/.",
+  "scripts": {
+    "build:vendor": "node build-vendor.js",
+    "build:textures": "node build-textures.js",
+    "build:stars": "node build-stars.js"
+  },
+  "dependencies": {
+    "all-the-cities": "3.1.0",
+    "d3-celestial": "0.7.35",
+    "esbuild": "0.28.2",
+    "i18n-iso-countries": "7.14.0",
+    "jpeg-js": "0.4.4",
+    "pngjs": "7.0.0",
+    "three": "0.186.0",
+    "three-geojson-geometry": "2.1.1",
+    "three-globe": "2.45.2",
+    "topojson-client": "3.1.0",
+    "world-atlas": "2.0.2"
+  }
+}

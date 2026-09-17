@@ -15,6 +15,16 @@ NF.config = {
     SUPABASE_URL: 'https://btfmblmmhagkjzdwjkhg.supabase.co',
     SUPABASE_KEY: 'sb_publishable_26evHlZgEKupz2fsknDjnA_xO5hQqx0',
 
+
+    /**
+     * Сколько строк справочника должно быть в базе, когда заливка доехала.
+     * Числа — из манифеста генератора (tools/geo/build-reference-sql.js):
+     * 235 стран и 9045 городов от 50 000 жителей. Нужны только метке
+     * прогресса в админке: без ожидаемого числа «загружено 1606» ничего
+     * не значит.
+     */
+    REFERENCE_EXPECTED: { countries: 235, cities: 9045 },
+
     /** Заглушка, когда у города нет своей картинки или она не загрузилась. */
     FALLBACK_IMAGE: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&h=400&fit=crop',
 };
