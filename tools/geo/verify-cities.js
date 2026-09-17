@@ -44,7 +44,8 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const crypto = require('node:crypto');
+
+const shared = require('./checksum.js');
 
 /** Во сколько раз сдвигаются координаты. В источнике не больше пяти знаков. */
 const COORD_SCALE_DIGITS = 5;
@@ -65,20 +66,6 @@ const CHECK_SQL = 'select count(*)::bigint as rows,' +
     " md5(string_agg(name || '|' || country_code, chr(10) order by geoname_id)) as names_md5" +
     ' from public.geo_cities;';
 
-/**
- * Сдвигает десятичную строку на `digits` знаков, не превращая её в double.
- * «36.1893» при пяти знаках даёт 3618930 — ровно то же, что `numeric` в базе.
- */
-function scaleDecimal(text, digits) {
-    const negative = text.charAt(0) === '-';
-    const digitsOnly = negative ? text.slice(1) : text;
-    const parts = digitsOnly.split('.');
-    const fraction = (parts[1] || '').slice(0, digits);
-    const padded = parts[0] + fraction + '0'.repeat(digits - fraction.length);
-    const value = Number(padded);
-    return negative ? -value : value;
-}
-
 /** Разбирает строки данных одного файла. Заголовок и хвост оператора пропускаются. */
 function parseRows(text) {
     const rows = [];
@@ -91,8 +78,8 @@ function parseRows(text) {
             id: Number(match[1]),
             name: match[2].split("''").join("'"),
             country: match[3],
-            lat: scaleDecimal(match[4], COORD_SCALE_DIGITS),
-            lng: scaleDecimal(match[5], COORD_SCALE_DIGITS),
+            lat: shared.scaleDecimal(match[4], COORD_SCALE_DIGITS),
+            lng: shared.scaleDecimal(match[5], COORD_SCALE_DIGITS),
             population: Number(match[6])
         });
     });
@@ -111,7 +98,7 @@ function checksum(rows) {
         totals.sum_lng += row.lng;
         lines.push(row.name + '|' + row.country);
     });
-    totals.names_md5 = crypto.createHash('md5').update(lines.join('\n'), 'utf8').digest('hex');
+    totals.names_md5 = shared.md5(lines.join('\n'));
     return totals;
 }
 
@@ -121,15 +108,6 @@ function readCityFiles(dir) {
         return name.indexOf('geo-cities-') === 0 && name.slice(-4) === '.sql';
     }).sort().map(function (name) {
         return { file: name, rows: parseRows(fs.readFileSync(path.join(dir, name), 'utf8')) };
-    });
-}
-
-/** Сравнивает ожидаемое с тем, что вернула база. Возвращает список расхождений. */
-function compare(expected, actual) {
-    return Object.keys(expected).filter(function (key) {
-        return String(expected[key]) !== String(actual[key]);
-    }).map(function (key) {
-        return key + ': в источнике ' + expected[key] + ', в базе ' + actual[key];
     });
 }
 
@@ -154,19 +132,6 @@ function parseArgs(argv) {
     return options;
 }
 
-function printTotals(title, totals) {
-    process.stdout.write(title + '\n');
-    Object.keys(totals).forEach(function (key) {
-        process.stdout.write('  ' + key + ' = ' + totals[key] + '\n');
-    });
-}
-
-/** Ответ базы приходит массивом из одной строки — принимаем и массив, и объект. */
-function firstRow(json) {
-    const parsed = JSON.parse(json);
-    return Array.isArray(parsed) ? parsed[0] : parsed;
-}
-
 function main() {
     const options = parseArgs(process.argv.slice(2));
     if (options.problem) {
@@ -180,33 +145,28 @@ function main() {
     }
     if (options.chunks) {
         files.forEach(function (entry) {
-            printTotals(entry.file, checksum(entry.rows));
+            shared.printTotals(entry.file, checksum(entry.rows));
         });
         return 0;
     }
     const all = [];
     files.forEach(function (entry) { Array.prototype.push.apply(all, entry.rows); });
     const expected = checksum(all);
-    printTotals('ожидается в базе (' + files.length + ' порций):', expected);
+    shared.printTotals('ожидается в базе (' + files.length + ' порций):', expected);
     if (!options.compare) {
         process.stdout.write('\nзапрос для сверки:\n' + CHECK_SQL + '\n');
         return 0;
     }
-    const problems = compare(expected, firstRow(options.compare));
-    if (problems.length === 0) {
-        process.stdout.write('\nсверка сошлась: справочник в базе совпадает с источником\n');
-        return 0;
+    const code = shared.reportComparison(expected, options.compare);
+    if (code !== 0) {
+        process.stdout.write('ищи виноватую порцию ключом --chunks\n');
     }
-    process.stdout.write('\nРАСХОЖДЕНИЕ:\n' + problems.join('\n') + '\n' +
-        'ищи виноватую порцию ключом --chunks\n');
-    return 1;
+    return code;
 }
 
 module.exports = {
-    scaleDecimal: scaleDecimal,
     parseRows: parseRows,
     checksum: checksum,
-    compare: compare,
     parseArgs: parseArgs,
     CHECK_SQL: CHECK_SQL
 };

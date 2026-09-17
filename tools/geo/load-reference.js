@@ -46,12 +46,26 @@
  *
  * Ключи:
  *   --sql      каталог, куда build-reference-sql.js положил SQL (обязателен)
- *   --only     countries | cities — залить только одну половину справочника
+ *   --only     countries | cities | names — залить только одну часть справочника
  *   --pause    пауза между порциями в миллисекундах (по умолчанию 500)
+ *   --force    не пропускать уже применённые порции, залить всё заново
  *   --dry-run  разобрать файлы и напечатать план, в базу не ходить
  *
  * Прерывание по Ctrl+C не рвёт текущую порцию: скрипт доводит её до конца
  * и выходит. Повторный запуск продолжит с того места, где остановились.
+ *
+ * КОГДА НУЖЕН `--force`. Возобновление считает порцию применённой по наличию
+ * ключей — но ключ может лежать в базе со **старым или испорченным**
+ * значением. Именно для этого случая порции собраны как
+ * `insert … on conflict do update`: повторная заливка чинит строку. Без
+ * `--force` до этого `update` дело не дойдёт никогда — порция будет
+ * пропущена как «уже в базе». Так уже случилось на деле: в базе нашлись семь
+ * стран со `spread` из более ранней сборки, и починить их повторным запуском
+ * без ключа было нельзя.
+ *
+ * Поэтому правило простое: **обычный запуск — продолжить прерванное,
+ * `--force` — привести базу к источнику.** Порции идемпотентны, лишнего
+ * `--force` не портит, он только дольше.
  */
 'use strict';
 
@@ -78,6 +92,7 @@ const KINDS = {
     countries: {
         prefix: 'countries-',
         table: 'public.countries',
+        statement: 'insert into',
         keyColumn: 'code',
         keyType: 'text[]',
         keySource: "^\\('([A-Z]{2})',",
@@ -86,15 +101,29 @@ const KINDS = {
     cities: {
         prefix: 'geo-cities-',
         table: 'public.geo_cities',
+        statement: 'insert into',
         keyColumn: 'geoname_id',
         keyType: 'bigint[]',
         keySource: '^\\((\\d+),',
         castKey: function (raw) { return Number(raw); }
+    },
+    // Написания — не вставка, а update уже существующих городов. Поэтому
+    // «ключ на месте» здесь ничего не значит: город лежит в базе с самого
+    // начала. Признак применённой порции другой — у города появились names.
+    names: {
+        prefix: 'city-names-',
+        table: 'public.geo_cities',
+        statement: 'update ',
+        keyColumn: 'geoname_id',
+        keyType: 'bigint[]',
+        keySource: '^\\s*\\((\\d+), ',
+        appliedWhen: ' and names is not null',
+        castKey: function (raw) { return Number(raw); }
     }
 };
 
-/** Порядок половин справочника: страны раньше городов из-за внешнего ключа. */
-const KIND_ORDER = ['countries', 'cities'];
+/** Порядок: страны раньше городов из-за внешнего ключа, написания — после городов. */
+const KIND_ORDER = ['countries', 'cities', 'names'];
 
 function kindOf(fileName) {
     const names = Object.keys(KINDS);
@@ -117,8 +146,9 @@ function parseChunk(fileName, text) {
     if (!kind) {
         return null;
     }
-    if (text.indexOf('insert into') < 0) {
-        throw new Error('в файле ' + fileName + ' нет оператора insert');
+    const statement = KINDS[kind].statement;
+    if (text.indexOf(statement) < 0) {
+        throw new Error('в файле ' + fileName + ' нет оператора ' + statement.trim());
     }
     const pattern = new RegExp(KINDS[kind].keySource, 'gm');
     const keys = [];
@@ -129,6 +159,14 @@ function parseChunk(fileName, text) {
     }
     if (keys.length === 0) {
         throw new Error('в файле ' + fileName + ' не нашлось ни одной строки данных');
+    }
+    // Повтор ключа внутри порции ломает возобновление навсегда: база вернёт
+    // число различных ключей, оно никогда не сравняется с числом строк,
+    // и порция будет заливаться заново при каждом запуске. Данным это
+    // не вредит, поэтому находка тихая — и именно поэтому её надо назвать.
+    if (new Set(keys).size !== keys.length) {
+        throw new Error('в файле ' + fileName + ' ключ встречается дважды; ' +
+            'возобновление на такой порции работать не будет');
     }
     return { file: fileName, kind: kind, keys: keys, rows: keys.length, sql: text };
 }
@@ -168,7 +206,8 @@ function orderChunks(chunks, only) {
 }
 
 function parseArgs(argv) {
-    const options = { sqlDir: null, only: null, pause: DEFAULT_PAUSE_MS, dryRun: false, problem: null };
+    const options = { sqlDir: null, only: null, pause: DEFAULT_PAUSE_MS,
+        force: false, dryRun: false, problem: null };
     for (let i = 0; i < argv.length; i++) {
         const arg = argv[i];
         if (arg.indexOf('--sql=') === 0) {
@@ -177,6 +216,8 @@ function parseArgs(argv) {
             options.only = arg.slice('--only='.length);
         } else if (arg.indexOf('--pause=') === 0) {
             options.pause = Number(arg.slice('--pause='.length));
+        } else if (arg === '--force') {
+            options.force = true;
         } else if (arg === '--dry-run') {
             options.dryRun = true;
         } else {
@@ -187,7 +228,7 @@ function parseArgs(argv) {
     if (!options.sqlDir) {
         options.problem = 'не указан --sql=<каталог с SQL>';
     } else if (options.only && KIND_ORDER.indexOf(options.only) < 0) {
-        options.problem = '--only принимает только countries или cities';
+        options.problem = '--only принимает только ' + KIND_ORDER.join(', ');
     } else if (!(options.pause >= 0) || options.pause > MAX_PAUSE_MS) {
         options.problem = '--pause должен быть от 0 до ' + MAX_PAUSE_MS + ' миллисекунд';
     }
@@ -216,7 +257,8 @@ function openClient(url) {
 async function loadedKeyCount(client, chunk) {
     const kind = KINDS[chunk.kind];
     const sql = 'select count(*)::int as n from ' + kind.table +
-        ' where ' + kind.keyColumn + ' = any($1::' + kind.keyType + ')';
+        ' where ' + kind.keyColumn + ' = any($1::' + kind.keyType + ')' +
+        (kind.appliedWhen || '');
     const result = await client.query(sql, [chunk.keys]);
     return result.rows[0].n;
 }
@@ -231,10 +273,10 @@ function printPlan(chunks) {
 }
 
 /** Одна порция: пропустить, применить или сообщить об ошибке. Возвращает исход. */
-async function applyChunk(client, chunk, index, total) {
+async function applyChunk(client, chunk, index, total, force) {
     const label = '[' + (index + 1) + '/' + total + '] ' + chunk.file;
     const present = await loadedKeyCount(client, chunk);
-    if (present === chunk.rows) {
+    if (!force && present === chunk.rows) {
         process.stdout.write(label + ' — уже в базе, пропуск\n');
         return 'skipped';
     }
@@ -248,6 +290,14 @@ async function applyChunk(client, chunk, index, total) {
     const seconds = ((Date.now() - startedAt) / 1000).toFixed(1);
     process.stdout.write(label + ' — строк ' + chunk.rows + ', было ' + present +
         ', готово за ' + seconds + ' с\n');
+    // Оператор мог пройти и не тронуть ни одной строки: update по городам,
+    // которых ещё нет, ошибкой не считается. Молчаливый ноль хуже ошибки,
+    // поэтому пересчитываем и говорим вслух.
+    const after = await loadedKeyCount(client, chunk);
+    if (after < chunk.rows) {
+        process.stdout.write(label + ' — ВНИМАНИЕ: в базе оказалось ' + after +
+            ' из ' + chunk.rows + '; порция применилась не полностью\n');
+    }
     return 'applied';
 }
 
@@ -259,21 +309,21 @@ async function runHelper(client, helpers, name) {
     await client.query(helpers[name]);
 }
 
-async function loadAll(client, chunks, helpers, pauseMs, stop) {
+async function loadAll(client, chunks, helpers, options, stop) {
     const needsHelper = chunks.some(function (chunk) { return chunk.kind === 'countries'; });
     const tally = { applied: 0, skipped: 0, failed: 0, stopped: false };
     if (needsHelper) {
         await runHelper(client, helpers, HELPER_CREATE);
     }
     for (let i = 0; i < chunks.length; i++) {
-        const outcome = await applyChunk(client, chunks[i], i, chunks.length);
+        const outcome = await applyChunk(client, chunks[i], i, chunks.length, options.force);
         tally[outcome] += 1;
         if (stop.requested) {
             tally.stopped = true;
             break;
         }
-        if (pauseMs > 0 && i < chunks.length - 1) {
-            await pause(pauseMs);
+        if (options.pause > 0 && i < chunks.length - 1) {
+            await pause(options.pause);
         }
     }
     if (needsHelper) {
@@ -327,7 +377,7 @@ async function main() {
     await client.connect();
     let tally;
     try {
-        tally = await loadAll(client, chunks, read.helpers, options.pause, stop);
+        tally = await loadAll(client, chunks, read.helpers, options, stop);
     } finally {
         await client.end();
     }

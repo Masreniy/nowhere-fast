@@ -22,6 +22,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 
 const verify = require('../tools/geo/verify-cities.js');
+const shared = require('../tools/geo/checksum.js');
 
 const SQL = [
     'insert into public.geo_cities (geoname_id, name, country_code, lat, lng, population) values',
@@ -33,14 +34,14 @@ const SQL = [
 ].join('\n');
 
 test('десятичная строка сдвигается без плавающей точки', function () {
-    assert.strictEqual(verify.scaleDecimal('36.1893', 5), 3618930);
-    assert.strictEqual(verify.scaleDecimal('-23.5475', 5), -2354750);
-    assert.strictEqual(verify.scaleDecimal('42.7125', 5), 4271250);
-    assert.strictEqual(verify.scaleDecimal('7', 5), 700000);
-    assert.strictEqual(verify.scaleDecimal('-0.5', 5), -50000);
+    assert.strictEqual(shared.scaleDecimal('36.1893', 5), 3618930);
+    assert.strictEqual(shared.scaleDecimal('-23.5475', 5), -2354750);
+    assert.strictEqual(shared.scaleDecimal('42.7125', 5), 4271250);
+    assert.strictEqual(shared.scaleDecimal('7', 5), 700000);
+    assert.strictEqual(shared.scaleDecimal('-0.5', 5), -50000);
     // Лишние знаки отрезаются, а не округляются: в источнике их не бывает,
     // но молча превратить 1.234567 в 1.23457 хуже, чем отрезать предсказуемо.
-    assert.strictEqual(verify.scaleDecimal('1.234567', 5), 123456);
+    assert.strictEqual(shared.scaleDecimal('1.234567', 5), 123456);
 });
 
 test('считаются только строки данных, апостроф в имени разэкранируется', function () {
@@ -91,13 +92,13 @@ test('сравнение не спотыкается о тип: база отд�
         sum_lng: String(expected.sum_lng),
         names_md5: expected.names_md5
     };
-    assert.deepStrictEqual(verify.compare(expected, fromDatabase), []);
+    assert.deepStrictEqual(shared.compare(expected, fromDatabase), []);
 });
 
 test('расхождение называется поимённо', function () {
     const expected = verify.checksum(verify.parseRows(SQL));
     const broken = Object.assign({}, expected, { sum_lat: expected.sum_lat + 1 });
-    const problems = verify.compare(expected, broken);
+    const problems = shared.compare(expected, broken);
     assert.strictEqual(problems.length, 1);
     assert.match(problems[0], /^sum_lat: в источнике/);
 });
