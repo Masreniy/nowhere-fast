@@ -86,7 +86,6 @@ NF.globe = (function () {
         const list = (cities || []).map(function (city, i) {
             return {
                 index: i,
-                id: city.id,
                 name: city.name,
                 lat: city.lat,
                 lng: city.lng,
@@ -221,7 +220,7 @@ NF.globe = (function () {
                 out.push({
                     index: city.index, alt: alt,
                     lat: city.lat, lng: city.lng, pop: city.pop,
-                    id: city.id, name: city.name,
+                    name: city.name,
                 });
             });
             return out.sort(byPopulation).slice(0, limit);

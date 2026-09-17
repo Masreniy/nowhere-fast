@@ -175,7 +175,7 @@ window.NF = window.NF || {};
                         const city = NF.globeData.cityAt(item.index);
                         return {
                             index: item.index,
-                            name: city ? city.name : '',
+                            name: NF.globeData.cityName(item.index),
                             lat: city ? city.lat : 0,
                             lng: city ? city.lng : 0,
                         };
@@ -203,8 +203,7 @@ window.NF = window.NF || {};
     function selectionTitle() {
         if (!selection) return '';
         if (selection.kind !== 'city') return NF.globeData.countryName(selection.index);
-        const city = NF.globeData.cityAt(selection.index);
-        return city ? city.name : '';
+        return NF.globeData.cityName(selection.index);
     }
 
     function labelView() {
@@ -337,6 +336,21 @@ window.NF = window.NF || {};
 
         hideBoot();
         frame();
+
+        // Написания городов — ПОСЛЕ первого кадра и не мешая ему.
+        // Справочник приходит латиницей, и этого хватает, чтобы страница
+        // ожила; написания на языке интерфейса приезжают следом и обновляют
+        // подписи и поиск. Не доехали — остаётся латиница, а не пустой глобус.
+        refreshCityNames();
+        NF.i18n.onChange(refreshCityNames);
+    }
+
+    /** Догрузить написания на текущий язык и переотрисовать то, что их показывает. */
+    async function refreshCityNames() {
+        const loaded = await NF.globeData.loadCityNames(NF.i18n.lang());
+        if (!loaded) return;
+        onSelect(selection);
+        card.refresh();
     }
 
     /** Геолокация — только по явному разрешению браузера, и молча без неё. */

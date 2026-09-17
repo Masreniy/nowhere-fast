@@ -102,7 +102,7 @@ NF.globeCard = (function () {
                     const city = data.cityAt(item.index);
                     return {
                         index: item.index, km: item.km,
-                        name: city ? city.name : '',
+                        name: data.cityName(item.index),
                         lat: city ? city.lat : 0,
                         lng: city ? city.lng : 0,
                     };
@@ -142,7 +142,9 @@ NF.globeCard = (function () {
             });
         }
 
-        function cityActions(city) {
+        // Вызывается только когда выбран город, поэтому имя берётся
+        // по selection.index, а не из переданной записи.
+        function cityActions() {
             const row = data.productAt(selection.index);
             return [
                 row
@@ -157,7 +159,8 @@ NF.globeCard = (function () {
                         click: function () {
                             NF.origin.set({
                                 lat: selection.lat, lng: selection.lng,
-                                name: city ? city.name : null, source: 'manual',
+                                name: data.cityName(selection.index),
+                                source: 'manual',
                             });
                         },
                     },
@@ -206,7 +209,7 @@ NF.globeCard = (function () {
             const country = isCity ? null : data.countryAtIndex(selection.index);
 
             node('globe-card-name').textContent = isCity
-                ? (city ? city.name : '')
+                ? data.cityName(selection.index)
                 : data.countryName(selection.index);
             node('globe-card-meta').textContent = isCity
                 ? data.countryNameByCode(city ? city.country_code : '')
@@ -215,7 +218,7 @@ NF.globeCard = (function () {
             dom.replace(node('globe-card-stats'), stats(city, country));
             renderNearby();
             dom.replace(node('globe-card-actions'),
-                isCity ? cityActions(city) : countryActions(country));
+                isCity ? cityActions() : countryActions(country));
         }
 
         /** Перерисовка без нового выбора: сменились время, язык или точка отсчёта. */

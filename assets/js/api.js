@@ -286,7 +286,10 @@ NF.api = (function () {
         const floor = Number(minPopulation) > 0 ? Number(minPopulation) : 0;
         const { data, error } = await client
             .from('geo_cities')
-            .select('geoname_id, name, names, country_code, lat, lng, population')
+            // Колонка names здесь не запрашивается намеренно: в ней десять
+            // языков, человеку нужен один, и разница после сжатия — 260 КБ
+            // против 42. Один нужный язык приходит отдельно, listCityNames().
+            .select('geoname_id, name, country_code, lat, lng, population')
             .gte('population', floor)
             .order('population', { ascending: false });
         if (error) fail(error);
@@ -307,6 +310,27 @@ NF.api = (function () {
             .not('lat', 'is', null)
             .not('lng', 'is', null)
             .order('name');
+        if (error) fail(error);
+        return data || [];
+    }
+
+    /**
+     * Написания городов на одном языке: { geoname_id, local_name }.
+     *
+     * Через функцию базы, а не выборкой колонки: см. комментарий
+     * в listGeoCities. Язык проверяется по списку NF.i18n.LANGS — не потому,
+     * что иначе возможна инъекция (это параметр запроса, а не склейка строк),
+     * а потому что опечатка в коде языка тихо вернула бы пустой список,
+     * и страница осталась бы латиницей без единого признака поломки.
+     */
+    async function listCityNames(lang) {
+        const known = NF.i18n && NF.i18n.LANGS.some(function (item) {
+            return item.code === lang;
+        });
+        if (!known) {
+            throw new Error('неизвестный код языка: ' + lang);
+        }
+        const { data, error } = await client.rpc('geo_city_names', { lang: lang });
         if (error) fail(error);
         return data || [];
     }
@@ -347,6 +371,7 @@ NF.api = (function () {
         referenceProgress: referenceProgress,
         listCountries: listCountries,
         listGeoCities: listGeoCities,
+        listCityNames: listCityNames,
         listCitiesWithContent: listCitiesWithContent,
     };
 })();

@@ -628,3 +628,27 @@ select
     (select min(population) from public.geo_cities)                   as smallest_city;
 
 grant select on public.geo_reference_progress to anon, authenticated;
+
+-- Написания городов на ОДНОМ языке.
+--
+-- Зачем функция, а не выборка колонки `names` целиком: колонка хранит десять
+-- языков, а человеку из них нужен ровно один. Разница измерена на настоящих
+-- данных — 260 КБ после сжатия против 42. Тянуть в браузер девять чужих
+-- языков ради одного своего нечего.
+--
+-- security invoker — по той же причине, что у представлений выше: функция
+-- обязана подчиняться политикам RLS базовой таблицы, а не правам своего
+-- владельца.
+create or replace function public.geo_city_names(lang text)
+returns table (geoname_id integer, local_name text)
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+    select c.geoname_id, c.names ->> lang
+    from public.geo_cities c
+    where c.names ? lang
+$$;
+
+grant execute on function public.geo_city_names(text) to anon, authenticated;

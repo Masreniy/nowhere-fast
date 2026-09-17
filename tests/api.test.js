@@ -48,6 +48,11 @@ function setup(options) {
     const calls = [];
 
     win.eval(fs.readFileSync(path.join(ROOT, 'assets/js/config.js'), 'utf8'));
+    // i18n нужен слою данных: он сверяет код языка со списком NF.i18n.LANGS.
+    // На всех четырёх страницах i18n подключён раньше api.js, так что здесь
+    // повторяется тот же порядок, а не создаётся удобная выдумка.
+    win.eval(fs.readFileSync(path.join(ROOT, 'assets/js/i18n-strings.js'), 'utf8'));
+    win.eval(fs.readFileSync(path.join(ROOT, 'assets/js/i18n.js'), 'utf8'));
 
     win.supabase = {
         createClient: function () {
@@ -76,6 +81,10 @@ function setup(options) {
 
             return {
                 from: from,
+                rpc: function (name, args) {
+                    calls.push({ table: null, method: 'rpc', args: [name, args] });
+                    return Promise.resolve({ data: rows[name] || [], error: null });
+                },
                 auth: {
                     getSession: function () {
                         calls.push({ table: null, method: 'getSession', args: [] });
@@ -238,14 +247,38 @@ test('справочник стран просит контур — без не�
     assert.ok(/names/.test(select.args[0]), 'названия на языках не запрошены');
 });
 
-test('справочник городов отбирает по населению и просит написания', async () => {
+test('справочник городов отбирает по населению и НЕ тянет написания', async () => {
     const { win, calls } = setup();
     await win.NF.api.listGeoCities(50000);
     const select = calls.find(function (c) { return c.method === 'select'; });
     const gte = calls.find(function (c) { return c.method === 'gte'; });
     assert.strictEqual(select.table, 'geo_cities', 'запрошена не та таблица');
-    assert.ok(/names/.test(select.args[0]), 'написания не запрошены: ' + select.args[0]);
+    // Колонка names хранит десять языков, человеку нужен один. Замерено:
+    // 260 КБ после сжатия против 42. Раньше этот тест требовал обратного —
+    // и был прав ровно до тех пор, пока написания в браузере не появились
+    // и не выяснилось, что их никто не читает.
+    assert.ok(!/names/.test(select.args[0]),
+        'написания тянутся вместе со справочником: ' + select.args[0]);
     assert.deepStrictEqual(gte.args, ['population', 50000], 'порог населения не применён');
+});
+
+test('написания приходят отдельно и ровно на один язык', async () => {
+    const { win, calls } = setup();
+    await win.NF.api.listCityNames('ru');
+    const rpc = calls.find(function (c) { return c.method === 'rpc'; });
+    assert.ok(rpc, 'запрос написаний не ушёл');
+    // Сравнение по полям, а не deepStrictEqual: объект создан в другом
+    // realm (jsdom), и строгое сравнение спорит о прототипе, а не о данных.
+    assert.strictEqual(rpc.args[0], 'geo_city_names');
+    assert.strictEqual(rpc.args[1].lang, 'ru');
+});
+
+test('неизвестный код языка не уходит в базу молча', async () => {
+    // Опечатка вернула бы пустой список, и страница осталась бы латиницей
+    // без единого признака поломки. Лучше упасть здесь.
+    const { win } = setup();
+    await assert.rejects(function () { return win.NF.api.listCityNames('zz'); },
+        /неизвестный код языка/);
 });
 
 test('отрицательный порог населения не уходит в запрос как есть', async () => {
