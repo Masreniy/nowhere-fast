@@ -163,6 +163,16 @@
         </div>
 
         <div class="card">
+            <h2 data-i18n="admin.reference.title">🌍 Справочник стран и городов</h2>
+            <p class="admin-sub" data-i18n="admin.reference.note">
+                Справочник заливается порциями и переживает обрыв: загрузчик
+                спрашивает базу, что уже на месте, и продолжает с непройденного.
+                Эта метка отвечает на вопрос «доехало или нет» без запроса к агенту.
+            </p>
+            <div id="geo-reference-progress"></div>
+        </div>
+
+        <div class="card">
             <h2 data-i18n="admin.geoNames.title">🈯 Написания городов</h2>
             <p class="admin-sub" data-i18n="admin.geoNames.note">
                 Справочник городов приходит латиницей. Написания на языках интерфейса
@@ -482,6 +492,53 @@
             }
         }
 
+        // --- Справочник: метка заливки ---------------------------------------
+
+        /** «1606 из 9045 (18%)» — без ожидаемого числа загруженное ни о чём не говорит. */
+        function ofExpected(loaded, expected) {
+            const share = expected > 0 ? Math.round((loaded / expected) * 100) : 0;
+            return NF.i18n.n(loaded) + ' / ' + NF.i18n.n(expected) + ' (' + NF.i18n.n(share) + '%)';
+        }
+
+        /**
+         * Сколько справочника доехало.
+         *
+         * Ожидаемые числа берутся из NF.config, а не из базы: база знает только
+         * то, что в неё уже попало, и на вопрос «сколько осталось» ответить
+         * не может.
+         */
+        async function loadReferenceProgress() {
+            const container = document.getElementById('geo-reference-progress');
+            dom.loading(container, t('state.loading'));
+            try {
+                const progress = await NF.api.referenceProgress();
+                const expected = NF.config.REFERENCE_EXPECTED;
+                const countries = Number((progress && progress.countries) || 0);
+                const cities = Number((progress && progress.cities) || 0);
+
+                dom.replace(container, dom.el('ul', { class: 'admin-sub' }, [
+                    fact(t('admin.reference.countries'), ofExpected(countries, expected.countries)),
+                    fact(t('admin.reference.cities'), ofExpected(cities, expected.cities)),
+                    fact(
+                        t('admin.reference.withOutline'),
+                        NF.i18n.n(Number((progress && progress.countries_with_outline) || 0))
+                    ),
+                    fact(
+                        t('admin.reference.covered'),
+                        NF.i18n.n(Number((progress && progress.countries_with_cities) || 0))
+                    ),
+                    fact(
+                        t('admin.reference.smallest'),
+                        progress && progress.smallest_city
+                            ? NF.i18n.n(Number(progress.smallest_city))
+                            : '—'
+                    ),
+                ]));
+            } catch (error) {
+                dom.failure(container, t('admin.reference.failure'), error);
+            }
+        }
+
         // --- Написания городов: метка прогресса -----------------------------
 
         /**
@@ -599,7 +656,9 @@
         // вкладка, а сводка, и живёт своим циклом. Запрос дешёвый — одна строка
         // из представления, — поэтому считается сразу, а не по открытию вкладки.
         document.addEventListener('DOMContentLoaded', function () {
+            loadReferenceProgress();
             loadGeoNames();
+            NF.i18n.onChange(loadReferenceProgress);
             NF.i18n.onChange(loadGeoNames);
         });
     })();

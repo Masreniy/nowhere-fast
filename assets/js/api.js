@@ -320,6 +320,19 @@ NF.api = (function () {
         return data;
     }
 
+    /**
+     * Сводка заливки справочника: сколько стран и городов доехало.
+     * Считает база — тянуть девять тысяч строк в браузер ради двух чисел незачем.
+     */
+    async function referenceProgress() {
+        const { data, error } = await client
+            .from('geo_reference_progress')
+            .select('countries, countries_with_outline, cities, countries_with_cities, smallest_city')
+            .maybeSingle();
+        if (error) fail(error);
+        return data;
+    }
+
     return {
         client: client,
         listCities: listCities,
@@ -331,6 +344,7 @@ NF.api = (function () {
         deletePlace: deletePlace,
         listRoutes: listRoutes,
         cityNamesProgress: cityNamesProgress,
+        referenceProgress: referenceProgress,
         listCountries: listCountries,
         listGeoCities: listGeoCities,
         listCitiesWithContent: listCitiesWithContent,

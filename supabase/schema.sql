@@ -605,3 +605,26 @@ select
 from public.geo_cities;
 
 grant select on public.geo_city_names_progress to anon, authenticated;
+
+-- Сводка заливки справочника для метки в админке.
+--
+-- Зачем отдельно от `geo_city_names_progress`. Там прогресс сбора написаний,
+-- здесь — прогресс самой заливки: справочник приезжает порциями, и без метки
+-- единственный способ узнать, доехал он или нет, — спросить агента. Метка
+-- отвечает на это сама.
+--
+-- security_invoker — по той же причине, что у соседнего представления:
+-- представление обязано подчиняться RLS базовых таблиц, а не правам своего
+-- владельца, иначе оно становится обходом политик.
+create or replace view public.geo_reference_progress
+    with (security_invoker = true) as
+select
+    (select count(*) from public.countries)                           as countries,
+    (select count(*) from public.countries where outline is not null) as countries_with_outline,
+    (select count(*) from public.geo_cities)                          as cities,
+    (select count(distinct country_code) from public.geo_cities)      as countries_with_cities,
+    -- Порог источника — 50 000 жителей. Значение заметно выше означает,
+    -- что заливка не дошла до конца, а не что города такие крупные.
+    (select min(population) from public.geo_cities)                   as smallest_city;
+
+grant select on public.geo_reference_progress to anon, authenticated;

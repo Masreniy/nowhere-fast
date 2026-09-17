@@ -456,6 +456,14 @@ NF.i18nStrings = {
     // остальной admin.*, переведён на русский и английский; остальные девять
     // языков получают английскую строку запасным путём (см. шапку файла).
 
+    'admin.reference.title': { ru: '🌍 Справочник стран и городов', en: '🌍 Country and city gazetteer' },
+    'admin.reference.note': { ru: 'Справочник заливается порциями и переживает обрыв: загрузчик спрашивает базу, что уже на месте, и продолжает с непройденного. Эта метка отвечает на вопрос «доехало или нет» без запроса к агенту.', en: 'The gazetteer is loaded in chunks and survives an interruption: the loader asks the database what is already there and continues from where it stopped. This marker answers "has it arrived" without asking an agent.' },
+    'admin.reference.countries': { ru: 'Стран залито', en: 'Countries loaded' },
+    'admin.reference.cities': { ru: 'Городов залито', en: 'Cities loaded' },
+    'admin.reference.withOutline': { ru: 'Из них с контуром', en: 'Of those, with an outline' },
+    'admin.reference.covered': { ru: 'Стран, у которых есть города', en: 'Countries that have cities' },
+    'admin.reference.smallest': { ru: 'Самый маленький город', en: 'Smallest city' },
+    'admin.reference.failure': { ru: 'Не удалось получить сводку по справочнику', en: 'Could not load the gazetteer summary' },
     'admin.geoNames.title': { ru: '🈯 Написания городов', en: '🈯 City names' },
     'admin.geoNames.note': { ru: 'Справочник городов приходит латиницей. Написания на языках интерфейса собираются слоями: широкий слой из Natural Earth заливается целиком, точечный — медленно дозаполняется из OpenStreetMap для тех городов, которые действительно понадобились.', en: 'The city gazetteer arrives in Latin script. Names in the interface languages are collected in layers: a wide layer from Natural Earth is loaded in full, and a point layer is slowly topped up from OpenStreetMap for the cities that are actually needed.' },
     'admin.geoNames.total': { ru: 'Городов в справочнике', en: 'Cities in the gazetteer' },

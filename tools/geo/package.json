@@ -1,0 +1,13 @@
+{
+  "name": "nowhere-fast-geo-tools",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Сборка и заливка справочника стран и городов. В продакшен не попадает: в браузер уезжают только данные из базы.",
+  "scripts": {
+    "load": "node load-reference.js",
+    "verify": "node verify-cities.js"
+  },
+  "dependencies": {
+    "pg": "8.13.1"
+  }
+}
